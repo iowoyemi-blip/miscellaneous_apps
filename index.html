@@ -1,70 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Miscellaneous Apps</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; background:#f0f4f8; margin:0; padding:2rem; text-align:center; }
-    h1 { color:#2c3e50; margin-bottom:2rem; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:1.5rem; max-width:1100px; margin:0 auto; }
-    .card { background:#fff; border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,.1); padding:1.2rem; transition:transform .2s, box-shadow .2s; }
-    .card:hover { transform:translateY(-5px); box-shadow:0 6px 12px rgba(0,0,0,.15); }
-    .card a { text-decoration:none; font-size:1rem; color:#2980b9; font-weight:bold; }
+    :root{--ink:#2c3e50;--muted:#6b7280;--brand:#2563eb;--bg:#f0f4f8;--card:#fff;--border:#e5e7eb}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    header{padding:2rem 1rem 1rem;text-align:center;background:#eef2ff;border-bottom:1px solid #e0e7ff}
+    h1{margin:.25rem 0 .25rem}
+    .sub{margin:0;color:#374151}
+    .wrap{max-width:1100px;margin:0 auto;padding:1rem}
+    .controls{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0}
+    .btn{border:1px solid var(--border);background:#fff;padding:.5rem .75rem;border-radius:10px;cursor:pointer;text-decoration:none;color:#111}
+    .btn:hover{background:#f3f4f6}
+    .btn.primary{background:#2563eb;color:#fff;border-color:#1e40af}
+    .search-box{margin:1rem auto;text-align:center}
+    .search-box input{width:90%;max-width:500px;padding:.6rem 1rem;border:1px solid var(--border);border-radius:12px;font-size:1rem}
+    details{border:1px solid var(--border);background:var(--card);border-radius:12px;margin:1rem 0;overflow:hidden}
+    summary{cursor:pointer;padding:0.9rem 1rem;font-weight:700;background:#fff}
+    details[open] summary{border-bottom:1px solid var(--border);background:#fafafa}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;padding:1rem}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.06);padding:1.1rem;text-align:center;transition:transform .2s, box-shadow .2s}
+    .card:hover{transform:translateY(-3px);box-shadow:0 8px 16px rgba(0,0,0,.12)}
+    .card a{text-decoration:none;color:var(--brand);font-weight:700}
+    .hidden{display:none!important}
+    footer{margin:2rem 0;text-align:center;color:var(--muted)}
   </style>
 </head>
 <body>
-  <h1>Miscellaneous Apps</h1>
+  <header>
+    <h1>Miscellaneous Apps</h1>
+    <p class="sub">Click a category to expand. Use the buttons to expand/collapse all. Or use search to filter instantly.</p>
+  </header>
 
-  <div class="grid" id="appGrid"></div>
+  <div class="wrap">
+    <div class="controls">
+      <!-- NEW: Back to Hub button -->
+      <a class="btn primary" href="https://iowoyemi-blip.github.io/Algebra-App/">← Back to Algebra Hub</a>
+
+      <button class="btn" id="expandAll">Expand all</button>
+      <button class="btn" id="collapseAll">Collapse all</button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔎 Search apps by keyword... (e.g., Jeopardy, exponents)">
+    </div>
+
+    <!-- Boss Battles -->
+    <details>
+      <summary>Boss Battles</summary>
+      <div class="grid">
+        <div class="card"><a href="boss_battle_multistep_equations.html">Multistep Equations</a></div>
+        <div class="card"><a href="boss_battle_order_of_operations.html">Order of Operations</a></div>
+      </div>
+    </details>
+
+    <!-- Escape Rooms -->
+    <details>
+      <summary>Escape Rooms</summary>
+      <div class="grid">
+        <div class="card"><a href="escape_room_rules_of_exponents.html">Rules of Exponents</a></div>
+        <div class="card"><a href="escape_room_simplifying_square_roots.html">Simplifying Square Roots</a></div>
+        <div class="card"><a href="escape_room_square_roots_operations.html">Square Roots Operations</a></div>
+        <div class="card"><a href="escape_room_translate_equations.html">Translate Equations</a></div>
+        <div class="card"><a href="Exponent_Escape_Room.html">Exponents ER</a></div>
+        <div class="card"><a href="Formulating_equations_ER.html">Formulating Equations ER</a></div>
+        <div class="card"><a href="inequalities_ER1.html">Inequalities ER 1</a></div>
+        <div class="card"><a href="inequalities_ER2.html">Inequalities ER 2</a></div>
+        <div class="card"><a href="Inequalities_ER3.html">Inequalities ER 3</a></div>
+        <div class="card"><a href="literal_equations_ER.html">Literal Equations ER</a></div>
+      </div>
+    </details>
+
+    <!-- Jeopardy Games -->
+    <details>
+      <summary>Jeopardy Games</summary>
+      <div class="grid">
+        <div class="card"><a href="Equations_Jeopardy.html">Equations</a></div>
+        <div class="card"><a href="Exponents_Jeopardy.html">Exponents</a></div>
+        <div class="card"><a href="Exponents_Jeopardy-harder.html">Exponents (Harder)</a></div>
+        <div class="card"><a href="Jeopady_Functions_Part_1.html">Functions Part 1</a></div>
+        <div class="card"><a href="Jeopardy_Function_Part-2.html">Functions Part 2</a></div>
+        <div class="card"><a href="Jeopardy_Exponential.html">Exponentials</a></div>
+        <div class="card"><a href="Jeopardy_Linear_Functions_Part-1.html">Linear Functions Part 1</a></div>
+        <div class="card"><a href="Jeopardy_Linear_Functions_Part-2.html">Linear Functions Part 2</a></div>
+        <div class="card"><a href="Jeopardy_Polynomials.html">Polynomials</a></div>
+        <div class="card"><a href="Jeopardy_Polynomial-v2.html">Polynomials v2</a></div>
+        <div class="card"><a href="Jeopardy_Quadratics.html">Quadratics</a></div>
+        <div class="card"><a href="Jeopardy_Solving_Inequalities.html">Solving Inequalities</a></div>
+        <div class="card"><a href="Jeopardy_Systems.html">Systems</a></div>
+        <div class="card"><a href="Radicals_Jeopardy.html">Radicals</a></div>
+      </div>
+    </details>
+
+    <!-- Kahoot Style -->
+    <details>
+      <summary>Kahoot Style</summary>
+      <div class="grid">
+        <div class="card"><a href="exponents_kahoot_style_v3.html">Exponents Kahoot (v3)</a></div>
+        <div class="card"><a href="square_roots_kahoot.html">Square Roots Kahoot</a></div>
+        <div class="card"><a href="square_roots_operations_kahoot.html">Square Roots Ops Kahoot</a></div>
+      </div>
+    </details>
+
+    <!-- Target Score Games -->
+    <details>
+      <summary>Target Score Games</summary>
+      <div class="grid">
+        <div class="card"><a href="target_score_exponents.html">Exponents</a></div>
+        <div class="card"><a href="target_score_exponents_5min.html">Exponents (5 min)</a></div>
+        <div class="card"><a href="target_score_simplifying_square_roots.html">Simplifying Square Roots</a></div>
+        <div class="card"><a href="target_score_square_roots_operations.html">Square Roots Operations</a></div>
+      </div>
+    </details>
+
+    <!-- Manipulatives & Misc. -->
+    <details>
+      <summary>Manipulatives & Misc.</summary>
+      <div class="grid">
+        <div class="card"><a href="Equation_manipulative.html">Equation Manipulative</a></div>
+        <div class="card"><a href="more_square_roots.html">More Square Roots</a></div>
+        <div class="card"><a href="square_root-variables.html">Square Root Variables</a></div>
+        <div class="card"><a href="square_root-variables2.html">Square Root Variables 2</a></div>
+      </div>
+    </details>
+
+    <footer>Add new apps anytime—just drop the file in this repo and add a new card under the right category.</footer>
+  </div>
 
   <script>
-    const apps = [
-      { file: "boss_battle_multistep_equations.html", title: "Boss Battle - Multistep Equations" },
-      { file: "boss_battle_order_of_operations.html", title: "Boss Battle - Order of Operations" },
-      { file: "Equation_manipulative.html", title: "Equation Manipulative" },
-      { file: "Equations_Jeopardy.html", title: "Equations Jeopardy" },
-      { file: "escape_room_rules_of_exponents.html", title: "Escape Room - Rules of Exponents" },
-      { file: "escape_room_simplifying_square_roots.html", title: "Escape Room - Simplifying Square Roots" },
-      { file: "escape_room_square_roots_operations.html", title: "Escape Room - Square Roots Operations" },
-      { file: "escape_room_translate_equations.html", title: "Escape Room - Translate Equations" },
-      { file: "Exponent_Escape_Room.html", title: "Exponent Escape Room" },
-      { file: "Exponents_Jeopardy-harder.html", title: "Exponents Jeopardy (Harder)" },
-      { file: "Exponents_Jeopardy.html", title: "Exponents Jeopardy" },
-      { file: "exponents_kahoot_style_v3.html", title: "Exponents Kahoot Style v3" },
-      { file: "Formulating_equations_ER.html", title: "Formulating Equations Escape Room" },
-      { file: "inequalities_ER1.html", title: "Inequalities ER 1" },
-      { file: "inequalities_ER2.html", title: "Inequalities ER 2" },
-      { file: "Inequalities_ER3.html", title: "Inequalities ER 3" },
-      { file: "Jeopady_Functions_Part_1.html", title: "Jeopardy - Functions Part 1" },
-      { file: "Jeopardy_Exponential.html", title: "Jeopardy - Exponentials" },
-      { file: "Jeopardy_Function_Part-2.html", title: "Jeopardy - Functions Part 2" },
-      { file: "Jeopardy_Linear_Functions_Part-1.html", title: "Jeopardy - Linear Functions Part 1" },
-      { file: "Jeopardy_Linear_Functions_Part-2.html", title: "Jeopardy - Linear Functions Part 2" },
-      { file: "Jeopardy_Polynomial-v2.html", title: "Jeopardy - Polynomial v2" },
-      { file: "Jeopardy_Polynomials.html", title: "Jeopardy - Polynomials" },
-      { file: "Jeopardy_Quadratics.html", title: "Jeopardy - Quadratics" },
-      { file: "Jeopardy_Solving_Inequalities.html", title: "Jeopardy - Solving Inequalities" },
-      { file: "Jeopardy_Systems.html", title: "Jeopardy - Systems" },
-      { file: "literal_equations_ER.html", title: "Literal Equations Escape Room" },
-      { file: "more_square_roots.html", title: "More Square Roots" },
-      { file: "Radicals_Jeopardy.html", title: "Radicals Jeopardy" },
-      { file: "square_root-variables.html", title: "Square Root Variables" },
-      { file: "square_root-variables2.html", title: "Square Root Variables 2" },
-      { file: "square_roots_kahoot.html", title: "Square Roots Kahoot" },
-      { file: "square_roots_operations_kahoot.html", title: "Square Roots Operations Kahoot" },
-      { file: "target_score_exponents_5min.html", title: "Target Score - Exponents (5 min)" },
-      { file: "target_score_exponents.html", title: "Target Score - Exponents" },
-      { file: "target_score_simplifying_square_roots.html", title: "Target Score - Simplifying Square Roots" },
-      { file: "target_score_square_roots_operations.html", title: "Target Score - Square Roots Operations" }
-    ];
+    // Expand/Collapse all
+    const allDetails = () => Array.from(document.querySelectorAll("details"));
+    document.getElementById("expandAll").addEventListener("click", () => {
+      allDetails().forEach(d => d.open = true);
+    });
+    document.getElementById("collapseAll").addEventListener("click", () => {
+      allDetails().forEach(d => d.open = false);
+    });
 
-    const grid = document.getElementById("appGrid");
-    apps.forEach(app => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `<a href="${app.file}" target="_blank">${app.title}</a>`;
-      grid.appendChild(card);
+    // 🔎 Live Search
+    const searchInput = document.getElementById("searchInput");
+    const details = document.querySelectorAll("details");
+
+    searchInput?.addEventListener("input", () => {
+      const term = searchInput.value.toLowerCase();
+
+      details.forEach(d => {
+        let visibleCards = 0;
+        d.querySelectorAll(".card").forEach(card => {
+          const text = card.innerText.toLowerCase();
+          if(text.includes(term)){
+            card.classList.remove("hidden");
+            visibleCards++;
+          } else {
+            card.classList.add("hidden");
+          }
+        });
+        if(term === ""){
+          d.classList.remove("hidden");
+          d.open = false;
+          d.querySelectorAll(".card").forEach(c => c.classList.remove("hidden"));
+        } else {
+          d.classList.toggle("hidden", visibleCards === 0);
+          d.open = visibleCards > 0;
+        }
+      });
     });
   </script>
 </body>
