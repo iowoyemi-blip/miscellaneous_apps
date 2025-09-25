@@ -1,0 +1,835 @@
+<!-- escape_room.html (Student Version) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Escape Room: One-Variable Inequalities (Inequality + Interval)</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --card:#121923;
+    --ink:#e8f0ff;
+    --muted:#a9b7d1;
+    --accent:#41d1a7;
+    --accent2:#5aa2ff;
+    --danger:#ff6b6b;
+    --warn:#ffd166;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif;margin:0;padding:0}
+  header{padding:16px 20px;background:#0c141f;border-bottom:1px solid #1f2a3a;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;letter-spacing:.3px}
+  header .spacer{flex:1}
+  button, input[type="text"]{
+    background:#0d1826;border:1px solid #263449;color:var(--ink);padding:10px 12px;border-radius:12px;outline:none
+  }
+  button{cursor:pointer;font-weight:600}
+  button:hover{border-color:#3a506b}
+  button.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;color:#071019}
+  button.ghost{background:transparent;border:1px dashed #2e405e}
+  button.warn{background:#2b1f00;border-color:#644b00}
+  button[disabled]{opacity:.5;cursor:not-allowed}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid #1f2a3a;border-radius:16px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  .roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .progress{font-size:14px;color:var(--muted)}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid #2b3b56;color:var(--muted);font-size:12px}
+  .code-dots{display:flex;gap:10px}
+  .dot{width:44px;height:56px;border-radius:12px;background:#0d1320;border:1px solid #20324e;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800}
+  .ok{color:var(--accent)}
+  .bad{color:var(--danger)}
+  .note{font-size:13px;color:var(--muted)}
+  .title{font-size:20px;margin:0 0 6px 0}
+  .subtitle{font-size:14px;color:var(--muted);margin:0 0 10px 0}
+  .prompt{font-size:18px;line-height:1.45;margin:10px 0 14px 0}
+  .inputs{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:6px}
+  .feedback{min-height:20px;font-size:14px}
+  .feedback.ok{color:var(--accent)}
+  .feedback.bad{color:var(--danger)}
+  .hint{color:var(--warn);font-size:13px}
+  .hidden{display:none}
+  .footerbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:16px}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#0f1725;border:1px solid #283650;border-radius:6px;padding:2px 6px;font-size:12px;color:#dbe8ff}
+  .teacher{background:#141f2c;border:1px solid #27405e;padding:12px;border-radius:12px;margin-top:10px}
+  .celebrate{animation:pop .6s ease}
+  @keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1 aria-label="Escape Room: One Variable Inequalities">Escape Room · Inequality + Interval Notation</h1>
+  <span class="pill" id="roomLabel">Room 1/8</span>
+  <span class="pill" id="puzzleLabel">Puzzle 1/4</span>
+  <span class="spacer"></span>
+  <!-- Teacher Mode button left in for instructors; students can ignore -->
+  <button id="teacherBtn" aria-label="Teacher Mode">Teacher Mode</button>
+  <button id="exportBtn" class="ghost" aria-label="Export CSV of responses">Export CSV</button>
+</header>
+
+<main>
+  <section class="card">
+    <div class="roombar">
+      <div class="progress">Solve each inequality, then give the same solution in interval notation. Clear all 4 to reveal the door code.</div>
+    </div>
+    <div class="row" style="align-items:flex-start;gap:18px">
+      <div class="code-dots" role="group" aria-label="Room door code digits">
+        <div class="dot" id="digit0">•</div>
+        <div class="dot" id="digit1">•</div>
+        <div class="dot" id="digit2">•</div>
+        <div class="dot" id="digit3">•</div>
+      </div>
+      <div class="note">
+        Room code rule: take the <b>ones digit of the right-most finite bound</b> in your <i>final inequality</i> (for two-sided, use the <i>upper</i> bound). If it’s a fraction/decimal, use its whole-number part.
+      </div>
+    </div>
+  </section>
+
+  <section id="puzzleArea" class="grid" aria-live="polite"></section>
+
+  <div class="footerbar">
+    <div class="note">
+      Interval notation help: use <span class="kbd">(</span> / <span class="kbd">)</span> for <span class="kbd">&lt;, &gt;</span>, and <span class="kbd">[</span> / <span class="kbd">]</span> for <span class="kbd">≤, ≥</span>.
+      <b>When using infinity, you must use parentheses</b> — write <span class="kbd">(-inf, 7]</span> or <span class="kbd">(3, inf)</span>, never <span class="kbd">[-inf, 7]</span> or <span class="kbd">[3, inf]</span>.
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="prevRoomBtn" class="ghost" aria-label="Previous room">◀ Prev room</button>
+      <button id="nextRoomBtn" class="primary" aria-label="Next room" disabled>Next room ▶</button>
+    </div>
+  </div>
+</main>
+
+<!-- ===========================================================
+     GAME SCRIPT
+=========================================================== -->
+<script>
+/*** CONFIG ***/
+const TEACHER_PIN = 2025;   // change if desired
+const NUM_ROOMS = 8;
+const PUZZLES_PER_ROOM = 4;
+const TRIES_PER_STAGE = 3;
+
+/*** RNG (LCG) ***/
+function LCG(seed){
+  let s = BigInt(seed);
+  const a = 1664525n, c = 1013904223n, m = 2n**32n;
+  return ()=>{ s = (a*s + c) % m; return Number(s)/2**32; };
+}
+function seeded(seed){ const r = LCG(seed); return {
+  int:(min,max)=> Math.floor(r()*(max-min+1))+min,
+  pick:arr=> arr[Math.floor(r()*arr.length)],
+  sign:()=> r()<.5? -1: 1
+};}
+
+/*** UTILITIES ***/
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function simplifyFrac(n,d){const g=gcd(n,d);d<0? (n=-n,d=-d):0;return [n/g,d/g]}
+function fracToString(n,d){const [N,D]=simplifyFrac(n,d);return D===1? String(N): N+"/"+D}
+function toOnesDigit(v){ if (!isFinite(v)) return 0; const n = Math.floor(Math.abs(v)); return n%10; }
+function parseNumber(str){
+  str = (""+str).trim();
+  if (/^[+-]?\d+\/\d+$/.test(str)){
+    const [a,b]=str.split("/").map(Number); return a/b;
+  }
+  const n = Number(str);
+  if (Number.isFinite(n)) return n;
+  return NaN;
+}
+
+/*** NORMALIZATION ***/
+function normalizeEquationInput(s){
+  if (!s) return "";
+  s = s.replace(/[–—−]/g,"-")
+       .replace(/[×·]/g,"*")
+       .replace(/÷/g,"/")
+       .replace(/X/g,"x")
+       .replace(/[ \t]+/g," ")
+       .trim();
+  // Unicode inequalities
+  s = s.replace(/≤/g,"<=").replace(/≥/g,">=");
+  // implied multiplication
+  s = s.replace(/(\d)\s*(x|\()/g,"$1*$2");
+  s = s.replace(/x\s*(\d|\()/g,"x*$1");
+  s = s.replace(/\)\s*\(/g,")*(");
+  s = s.replace(/\)\s*(x|\d)/g,")*$1");
+  s = s.replace(/x\s*x/g,"x*x");
+  return s;
+}
+
+/*** INEQUALITY PARSER & EVAL ***/
+function splitIneq(str){
+  const s = normalizeEquationInput(str);
+  if (!s) return null;
+  let parts = [], ops = [], last = 0, m;
+  const re = /(<=|>=|<|>)/g;
+  while((m = re.exec(s))){
+    ops.push(m[1]);
+    parts.push(s.slice(last, m.index).trim());
+    last = m.index + m[1].length;
+  }
+  parts.push(s.slice(last).trim());
+  if (ops.length===1 && parts.length===2){
+    return {type:"binary", lhs:parts[0], op:ops[0], rhs:parts[1], raw:s};
+  } else if (ops.length===2 && parts.length===3){
+    return {type:"compound", left:parts[0], op1:ops[0], middle:parts[1], op2:ops[1], right:parts[2], raw:s};
+  }
+  return null;
+}
+function safeEvalExpr(expr, x){
+  if (!/^[0-9xX+\-*/().\s]*$/.test(expr)) throw new Error("bad chars");
+  if (/\/{2,}/.test(expr)) throw new Error("bad slash");
+  const fn = Function("x", "return ("+expr+");");
+  const v = fn(x);
+  if (!Number.isFinite(v)) throw new Error("nonfinite");
+  return v;
+}
+function evalIneqObj(obj, x){
+  try{
+    if (obj.type==="binary"){
+      const L = safeEvalExpr(obj.lhs, x);
+      const R = safeEvalExpr(obj.rhs, x);
+      switch(obj.op){
+        case "<=": return L<=R;
+        case ">=": return L>=R;
+        case "<":  return L<R;
+        case ">":  return L>R;
+      }
+    } else if (obj.type==="compound"){
+      const A = safeEvalExpr(obj.left, x);
+      const B = safeEvalExpr(obj.middle, x);
+      const C = safeEvalExpr(obj.right, x);
+      const c1 = obj.op1==="<=" ? A<=B : obj.op1===">=" ? A>=B : obj.op1==="<" ? A<B : A>B;
+      const c2 = obj.op2==="<=" ? B<=C : obj.op2===">=" ? B>=C : obj.op2==="<" ? B<C : B>C;
+      return c1 && c2;
+    }
+  }catch(e){ return null; }
+  return null;
+}
+function equivalentIneq(aStr, bStr){
+  const A = splitIneq(aStr);
+  const B = splitIneq(bStr);
+  if (!A || !B) return false;
+  const samples = [-50,-20,-10,-7,-5,-3,-2,-1,-0.5,0,0.5,1,2,3,5,7,10,20,50];
+  for (const x of samples){
+    const va = evalIneqObj(A,x);
+    const vb = evalIneqObj(B,x);
+    if (va===null || vb===null) return false;
+    if (va !== vb) return false;
+  }
+  return true;
+}
+
+/*** SOLUTION → INTERVAL ***/
+function solutionToInterval(solStr){
+  const obj = splitIneq(solStr);
+  if (!obj) return null;
+  function makeInterval(a, leftOpen, leftInf, b, rightOpen, rightInf){
+    return {a, leftOpen, leftInf, b, rightOpen, rightInf};
+  }
+  function val(expr){ try{ return safeEvalExpr(expr, 0); }catch(e){ return NaN; } }
+
+  if (obj.type==="binary"){
+    const Lx = /^x$/.test(obj.lhs);
+    const Rx = /^x$/.test(obj.rhs);
+    if (Lx){
+      const k = val(obj.rhs);
+      if (obj.op==="<=") return makeInterval(-Infinity, true, true, k, false, false);
+      if (obj.op==="<")  return makeInterval(-Infinity, true, true, k, true,  false);
+      if (obj.op===">=") return makeInterval(k, false, false, Infinity, true, true);
+      if (obj.op===">")  return makeInterval(k, true,  false, Infinity, true, true);
+    } else if (Rx){
+      const k = val(obj.lhs);
+      if (obj.op===">=") return makeInterval(-Infinity, true, true, k, false, false); // k >= x  → x <= k
+      if (obj.op===">")  return makeInterval(-Infinity, true, true, k, true,  false); // k > x   → x < k
+      if (obj.op==="<=") return makeInterval(k, false, false, Infinity, true, true);  // k <= x  → x >= k
+      if (obj.op==="<")  return makeInterval(k, true,  false, Infinity, true, true);  // k < x   → x > k
+    }
+  } else { // compound L ? x ? U
+    let L = obj.left, U = obj.right, mid = obj.middle;
+    if (!/x/.test(mid)) return null;
+    const a = val(L), b = val(U);
+    const leftOpen  = (obj.op1==="<");   // L < x
+    const rightOpen = (obj.op2==="<");   // x < U
+    return {a, leftOpen, leftInf:false, b, rightOpen, rightInf:false};
+  }
+  return null;
+}
+function intervalToString(I){
+  const l = I.leftInf? "-inf" : prettynum(I.a);
+  const r = I.rightInf? "inf" : prettynum(I.b);
+  const L = I.leftInf? "(" : (I.leftOpen? "(" : "[");
+  const R = I.rightInf? ")" : (I.rightOpen? ")" : "]");
+  return `${L}${l}, ${r}${R}`;
+}
+function prettynum(n){
+  if (!isFinite(n)) return n>0?"inf":"-inf";
+  if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+  return String(Number(n.toFixed(6)));
+}
+
+/*** INTERVAL PARSER (user input) ***/
+function parseInterval(str){
+  if (!str) return null;
+  let s = str.trim().toLowerCase();
+  s = s.replace(/\u221e/g,"inf"); // ∞
+  s = s.replace(/\s+/g,"");
+  const m = s.match(/^([\(\[])\s*([^,]+)\s*,\s*([^\)\]]+)\s*([\)\]])$/i);
+  if (!m) return null;
+  const Lsym=m[1], aStr=m[2], bStr=m[3], Rsym=m[4];
+  function val(t){
+    if (t==="inf" || t==="+inf") return Infinity;
+    if (t==="-inf") return -Infinity;
+    if (/^[+-]?\d+\/\d+$/.test(t)){ const [A,B]=t.split("/").map(Number); return A/B; }
+    const n=Number(t);
+    if (Number.isFinite(n)) return n;
+    return NaN;
+  }
+  const a=val(aStr), b=val(bStr);
+  if (!(isFinite(a) || a===Infinity || a===-Infinity)) return null;
+  if (!(isFinite(b) || b===Infinity || b===-Infinity)) return null;
+
+  // Reject impossible orientations and brackets at infinity
+  if (a===Infinity || b===-Infinity) return null; // nonsense intervals like (inf, 3)
+  const leftInf = (a===-Infinity);
+  const rightInf = (b===Infinity);
+  const leftOpen = (Lsym==="(");
+  const rightOpen = (Rsym===")");
+
+  // RULE: infinity must use parentheses (never brackets)
+  if (leftInf && !leftOpen) return null;
+  if (rightInf && !rightOpen) return null;
+
+  const I = { a, b, leftInf, rightInf, leftOpen, rightOpen };
+
+  // sanity checks
+  if (isFinite(a) && isFinite(b) && a>b) return null;
+  if (isFinite(a) && isFinite(b) && a===b && (leftOpen || rightOpen)) return null; // (k,k] etc. is empty
+
+  return I;
+}
+
+/*** INTERVAL EQUIVALENCE (by membership sampling) ***/
+function inInterval(I, x){
+  if (!I) return false;
+  if (!I.leftInf){
+    if (I.leftOpen){ if (!(x > I.a)) return false; }
+    else { if (!(x >= I.a)) return false; }
+  }
+  if (!I.rightInf){
+    if (I.rightOpen){ if (!(x < I.b)) return false; }
+    else { if (!(x <= I.b)) return false; }
+  }
+  return true;
+}
+function intervalEquivalent(Ia, Ib){
+  if (!Ia || !Ib) return false;
+  const samples = [-50,-20,-10,-5,-2,-1,-0.5,0,0.5,1,2,3,5,10,20,50];
+  [Ia,Ib].forEach(I=>{
+    if (I && isFinite(I.a)){
+      samples.push(I.a-1, I.a-0.001, I.a, I.a+0.001, I.a+1);
+    }
+    if (I && isFinite(I.b)){
+      samples.push(I.b-1, I.b-0.001, I.b, I.b+0.001, I.b+1);
+    }
+  });
+  for (const x of samples){
+    const A = inInterval(Ia, x);
+    const B = inInterval(Ib, x);
+    if (A!==B) return false;
+  }
+  return true;
+}
+
+/*** DIGIT FROM SOLUTION ***/
+function digitFromSolutionString(solStr){
+  const obj = splitIneq(solStr);
+  if (!obj) return 0;
+  if (obj.type==="binary"){
+    let k = null;
+    if (/^x$/.test(obj.lhs)) k = safeNumber(obj.rhs);
+    else if (/^x$/.test(obj.rhs)) k = safeNumber(obj.lhs);
+    else { try{k = safeEvalExpr(/^x$/.test(obj.lhs)?obj.rhs:obj.lhs, 0);}catch(e){k=0;} }
+    return toOnesDigit(k);
+  } else {
+    let kExpr = obj.right;
+    if (/[x]/.test(kExpr)){
+      kExpr = obj.middle;
+      if (/[x]/.test(kExpr)) kExpr = obj.left;
+    }
+    let k=0; try{k = safeEvalExpr(kExpr, 0);}catch(e){k=0;}
+    return toOnesDigit(k);
+  }
+}
+function safeNumber(expr){
+  try{
+    if (/^[+-]?\d+(?:\.\d+)?$/.test(expr)) return Number(expr);
+    if (/^[+-]?\d+\/\d+$/.test(expr)){ const [a,b]=expr.split("/").map(Number); return a/b; }
+    return safeEvalExpr(expr,0);
+  }catch(e){return 0;}
+}
+
+/*** PROBLEM GENERATORS ***/
+function asIneq(l,op,r){ return `${l} ${op} ${r}`; }
+function signed(n){ return n>=0? `+ ${n}` : `- ${Math.abs(n)}`; }
+
+const Categories = [
+  {name:"1-Step (Add/Subtract)"},
+  {name:"1-Step (Multiply/Divide)"},
+  {name:"2-Step (ax+b ? c)"},
+  {name:"2-Step with Negative Coefficient"},
+  {name:"Distributive Property"},
+  {name:"Variables on Both Sides"},
+  {name:"Fractional Coefficients"},
+  {name:"Compound Inequalities"}
+];
+
+function genC1(seed){
+  const rnd=seeded(seed);
+  const a = rnd.int(2,15)*rnd.sign();
+  const b = rnd.int(-15,25);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const plus = rnd.pick([true,false]);
+  const prompt = plus ? asIneq("x "+(a>=0?"+":"-")+" "+Math.abs(a), op, b)
+                      : asIneq("x - "+Math.abs(a), op, b);
+  const solutionVal = plus ? b - a : b + Math.abs(a);
+  const sym = op; // no flip
+  const solution = asIneq("x", sym, solutionVal);
+  const hint = "Undo the addition/subtraction on both sides, then interpret the inequality for interval endpoints.";
+  return {category:Categories[0].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C1"};
+}
+function genC2(seed){
+  const rnd=seeded(seed);
+  const k = rnd.pick([2,3,4,5,6,7,8,9]) * rnd.sign();
+  const m = rnd.int(-12,12);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const b = k*m;
+  const prompt = asIneq(`${k}x`, op, b);
+  const flip = k<0 ? {"<=":">=",">=":"<=", "<":">", ">":"<"}[op] : op;
+  const solution = asIneq("x", flip, m);
+  const hint = "Divide by the coefficient. If it's negative, flip the inequality. For interval: ≤ or ≥ ⇒ [ ], and < or > ⇒ ( ).";
+  return {category:Categories[1].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C2"};
+}
+function genC3(seed){
+  const rnd=seeded(seed);
+  const a = rnd.pick([2,3,4,5,6,7,8,9]);
+  const m = rnd.int(-12,12);
+  const b = rnd.int(-12,12);
+  const cFrom = a*m + b;
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`${a}x ${signed(b)}`, op, cFrom);
+  const solution = asIneq("x", op, m);
+  const hint = "Subtract the constant, then divide by the (positive) coefficient.";
+  return {category:Categories[2].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C3"};
+}
+function genC4(seed){
+  const rnd=seeded(seed);
+  const a = rnd.pick([2,3,4,5,6,7,8,9]); // will use -a
+  const m = rnd.int(-12,12);
+  const b = rnd.int(-12,12);
+  const c = b - a*m;
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`${-a}x ${signed(b)}`, op, c);
+  const flip = {"<=":">=",">=":"<=", "<":">", ">":"<"}[op];
+  const solution = asIneq("x", flip, m);
+  const hint = "Divide by a negative and flip the sign. Translate to a ray in interval notation.";
+  return {category:Categories[3].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C4"};
+}
+function genC5(seed){
+  const rnd=seeded(seed);
+  const p = rnd.pick([2,3,4,5,6]);
+  const r = rnd.int(-6,6);
+  const m = rnd.int(-12,12);
+  const form = rnd.pick(["x + r", "x - r"]);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const inner = form==="x + r" ? `x ${signed(r)}` : `x - ${Math.abs(r)}`;
+  const s = p*(m + (form==="x + r"? r : -Math.abs(r)));
+  const prompt = asIneq(`${p}(${inner})`, op, s);
+  const solution = asIneq("x", op, m);
+  const hint = "Either distribute or divide first; then convert boundary/strictness to [ ] or ( ).";
+  return {category:Categories[4].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C5"};
+}
+function genC6_pos(seed){
+  const rnd=seeded(seed);
+  const c = rnd.pick([0,1,2,3,4]);
+  const a = c + rnd.pick([2,3,4,5,6,7,8]);
+  const m = rnd.int(-10,10);
+  const b = rnd.int(-8,8);
+  const d = (a - c)*m + b;
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`${a}x ${signed(b)}`, op, `${c}x ${signed(d)}`);
+  const solution = asIneq("x", op, m);
+  const hint = "Collect x-terms to one side; divide by a positive number (no flip).";
+  return {category:Categories[5].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C6a"};
+}
+function genC6_neg(seed){
+  const rnd=seeded(seed);
+  const a = rnd.pick([0,1,2,3,4]);
+  const c = a + rnd.pick([2,3,4,5,6,7,8]);
+  const m = rnd.int(-10,10);
+  const b = rnd.int(-8,8);
+  const d = (a - c)*m + b;
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`${a}x ${signed(b)}`, op, `${c}x ${signed(d)}`);
+  const flip = {"<=":">=",">=":"<=", "<":">", ">":"<"}[op];
+  const solution = asIneq("x", flip, m);
+  const hint = "Collect x-terms; dividing by a negative flips the inequality. Convert to interval.";
+  return {category:Categories[5].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C6b"};
+}
+function genC7a(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  const b = rnd.int(-6,6);
+  const c = rnd.int(-6,6);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`x/${n} ${signed(b)}`, op, c);
+  const m = n*(c - b);
+  const solution = asIneq("x", op, m);
+  const hint = `Multiply by ${n}.`;
+  return {category:Categories[6].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C7a"};
+}
+function genC7b(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  const b = rnd.int(-6,6);
+  const c = rnd.int(-6,6);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const prompt = asIneq(`-x/${n} ${signed(b)}`, op, c);
+  const m = n*(b - c);
+  const flip = {"<=":">=",">=":"<=", "<":">", ">":"<"}[op];
+  const solution = asIneq("x", flip, m);
+  const hint = `Multiply by ${n} then by −1 (flip the inequality).`;
+  return {category:Categories[6].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C7b"};
+}
+function genC7c(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  const r = rnd.int(-6,6);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const m = rnd.int(-10,10);
+  const s = m + r; // (x - r)/n ? s  → x ? n*s + r
+  const prompt = asIneq(`(x ${signed(-r)})/${n}`, op, s);
+  const bound = n*s + r;
+  const solution = asIneq("x", op, bound);
+  const hint = "Clear the denominator, then undo the shift.";
+  return {category:Categories[6].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C7c"};
+}
+function genC7d(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  const q = rnd.int(-6,6);
+  const op = rnd.pick(["<=",">=","<",">"]);
+  const m = rnd.int(-8,8);
+  const prompt = asIneq(`(${q} - x)/${n}`, op, m);
+  const flip = {"<=":">=",">=":"<=", "<":">", ">":"<"}[op];
+  const bound = q - n*m;
+  const solution = asIneq("x", flip, bound);
+  const hint = "Multiply by n, then by −1 (flip) and solve for x.";
+  return {category:Categories[6].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C7d"};
+}
+function genC8a(seed){
+  const rnd=seeded(seed);
+  let L=rnd.int(-10,3), U=rnd.int(L+3, L+12);
+  const r = rnd.int(-5,5);
+  const op1 = rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]);
+  const prompt = `${L} ${op1} x ${signed(-r)} ${op2} ${U}`;
+  const solL = L + r, solU = U + r;
+  const solution = `${solL} ${op1} x ${op2} ${solU}`;
+  const hint = "Add the same number to all three parts; convert to [a, b], (a, b], etc.";
+  return {category:Categories[7].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C8a"};
+}
+function genC8b(seed){
+  const rnd=seeded(seed);
+  const k = rnd.pick([2,3,4,5]);
+  let L=rnd.int(-10,2), U=rnd.int(L+3, L+12);
+  const b=rnd.int(-6,6);
+  const op1 = rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]);
+  const prompt = `${L} ${op1} ${k}x ${signed(b)} ${op2} ${U}`;
+  const solL = (L - b)/k, solU = (U - b)/k;
+  const solution = `${solL} ${op1} x ${op2} ${solU}`;
+  const hint = "Subtract b, then divide the 3-part inequality by k.";
+  return {category:Categories[7].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C8b"};
+}
+function genC8c(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  let L=rnd.int(-8,2), U=rnd.int(L+2, L+10);
+  const t=rnd.int(-5,5);
+  const op1 = rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]);
+  const prompt = `${L} ${op1} (x ${signed(-t)})/${n} ${op2} ${U}`;
+  const solL = L*n + t, solU = U*n + t;
+  const solution = `${solL} ${op1} x ${op2} ${solU}`;
+  const hint = "Multiply by n, then undo the shift.";
+  return {category:Categories[7].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C8c"};
+}
+function genC8d(seed){
+  const rnd=seeded(seed);
+  const n = rnd.pick([2,3,4,5,6]);
+  let L=rnd.int(-8,1), U=rnd.int(L+3, L+12);
+  const q=rnd.int(-6,6);
+  const op1 = rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]);
+  const prompt = `${L} ${op1} (${q} - x)/${n} ${op2} ${U}`;
+  const mapFlip = s => s==="<" ? ">" : s===">" ? "<" : s===">=" ? "<=" : ">=";
+  const leftOp = mapFlip(op2), rightOp = mapFlip(op1);
+  const solLo = q - n*U, solHi = q - n*L;
+  const solution = `${solLo} ${leftOp} x ${rightOp} ${solHi}`;
+  const hint = "Multiply by n, then by −1 (flip both signs) and reorder from least to greatest.";
+  return {category:Categories[7].name, prompt:`Solve: ${prompt}`, promptIneq:prompt, solutionStr:solution, hint, gid:"C8d"};
+}
+
+const ROOM_REGISTRY = [
+  [genC1, genC1, genC1, genC1],
+  [genC2, genC2, genC2, genC2],
+  [genC3, genC3, genC3, genC3],
+  [genC4, genC4, genC4, genC4],
+  [genC5, genC5, genC5, genC5],
+  [genC6_pos, genC6_neg, genC6_pos, genC6_neg],
+  [genC7a, genC7b, genC7c, genC7d],
+  [genC8a, genC8b, genC8c, genC8d],
+];
+
+/*** SEEDING ***/
+function baseSeed(roomIndex, puzzleIndex, version=0){
+  return 1000 + roomIndex*100 + puzzleIndex*10 + version;
+}
+
+/*** CSV LOG ***/
+const logs = [];
+function logAttempt(entry){ logs.push(entry); }
+function exportCSV(){
+  const headers = ["timestamp","room","puzzle","category","promptId","student_solution_ineq","ineq_ok","attempts_ineq","student_interval","interval_ok","attempts_interval","code_digit"];
+  const rows = logs.map(r => headers.map(k => (r[k] ?? "")).join(","));
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], {type:"text/csv"}); const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href=url; a.download="inequalities_escape_room_log.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/*** RENDERING STATE ***/
+let state = {
+  room:0,
+  digits:[null,null,null,null],
+  teacher:false,
+  versions:Array.from({length:NUM_ROOMS},()=>[0,0,0,0]),
+  attemptsIneq:Array.from({length:NUM_ROOMS},()=>[0,0,0,0]),
+  attemptsInt:Array.from({length:NUM_ROOMS},()=>[0,0,0,0]),
+};
+
+function currentGenerators(){
+  const gens = [];
+  for(let p=0;p<PUZZLES_PER_ROOM;p++){
+    const version = state.versions[state.room][p];
+    const seed = baseSeed(state.room, p, version);
+    const gen = ROOM_REGISTRY[state.room][p];
+    const obj = gen(seed);
+    gens.push({...obj, generatorId: obj.gid+"-R"+(state.room+1)+"P"+(p+1)});
+  }
+  return gens;
+}
+function updateLabels(){
+  document.getElementById("roomLabel").textContent = `Room ${state.room+1}/${NUM_ROOMS}`;
+  document.getElementById("puzzleLabel").textContent = `Puzzle 1–4`;
+  for(let i=0;i<4;i++){
+    const d = document.getElementById("digit"+i);
+    d.textContent = state.digits[i]===null? "•": state.digits[i];
+    d.className = "dot " + (state.digits[i]!==null? "ok celebrate":"");
+  }
+  document.getElementById("nextRoomBtn").disabled = !state.digits.every(d=>d!==null) || state.room===NUM_ROOMS-1;
+  document.getElementById("prevRoomBtn").disabled = state.room===0;
+}
+
+function render(){
+  updateLabels();
+  const area = document.getElementById("puzzleArea");
+  area.innerHTML = "";
+  const gens = currentGenerators();
+  gens.forEach((G, idx)=>{
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    wrap.innerHTML = `
+      <div class="title">${Categories[state.room].name || G.category}</div>
+      <div class="subtitle">Puzzle ${idx+1}/4 • Step 1: inequality form. Step 2: interval notation.</div>
+      <div class="prompt" id="prompt-${idx}">${G.prompt}</div>
+
+      <label class="sr-only" for="ineqSol-${idx}">Step 1: Solve the inequality for x</label>
+      <div class="inputs">
+        <input id="ineqSol-${idx}" type="text" inputmode="text" aria-label="Solve the inequality for x" placeholder="" />
+        <button id="ineqSolBtn-${idx}" class="ghost" aria-label="Check inequality solution">Check inequality</button>
+      </div>
+      <div class="feedback" id="ineqSolFb-${idx}" role="status" aria-live="polite"></div>
+      <div class="hint hidden" id="ineqSolHint-${idx}">
+        Hint: ${G.hint}
+      </div>
+
+      <div id="stage2-${idx}" class="hidden">
+        <label class="sr-only" for="interval-${idx}">Step 2: Interval notation</label>
+        <div class="inputs">
+          <input id="interval-${idx}" type="text" inputmode="text" aria-label="Interval notation solution" placeholder="" />
+          <button id="intervalBtn-${idx}" class="primary" aria-label="Check interval notation">Check interval</button>
+        </div>
+        <div class="feedback" id="intervalFb-${idx}" role="status" aria-live="polite"></div>
+        <div class="hint hidden" id="intervalHint-${idx}">
+          Hint: Use <span class="kbd">( )</span> for &lt; or &gt;, <span class="kbd">[ ]</span> for ≤ or ≥, and <span class="kbd">inf</span> / <span class="kbd">-inf</span> for infinity. <b>Infinity must use parentheses.</b>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button id="reset-${idx}" class="warn" aria-label="Reset puzzle">Reset puzzle</button>
+      </div>
+
+      <div class="teacher ${state.teacher? "":"hidden"}" id="t-${idx}">
+        <div><b>Canonical (unsolved):</b> <span class="kbd">${G.promptIneq}</span></div>
+        <div><b>Inequality Solution:</b> <span class="kbd">${G.solutionStr}</span></div>
+        <div><b>Interval Solution:</b> <span class="kbd">${intervalToString(solutionToInterval(G.solutionStr))}</span></div>
+        <div><b>Digit rule (this room):</b> ones digit of the right-hand finite bound; for two-sided use the upper bound.</div>
+      </div>
+    `;
+    area.appendChild(wrap);
+
+    const ineqInput = wrap.querySelector(`#ineqSol-${idx}`);
+    const ineqBtn = wrap.querySelector(`#ineqSolBtn-${idx}`);
+    const ineqFb = wrap.querySelector(`#ineqSolFb-${idx}`);
+    const ineqHint = wrap.querySelector(`#ineqSolHint-${idx}`);
+
+    const stage2 = wrap.querySelector(`#stage2-${idx}`);
+    const intInput = wrap.querySelector(`#interval-${idx}`);
+    const intBtn = wrap.querySelector(`#intervalBtn-${idx}`);
+    const intFb = wrap.querySelector(`#intervalFb-${idx}`);
+    const intHint = wrap.querySelector(`#intervalHint-${idx}`);
+
+    function addDigit(d){ state.digits[idx]=d; updateLabels(); }
+
+    function checkIneq(){
+      const user = normalizeEquationInput(ineqInput.value);
+      const ok = equivalentIneq(user, G.solutionStr);
+      const attempts = ++state.attemptsIneq[state.room][idx];
+      logAttempt({
+        timestamp:new Date().toISOString(),
+        room: state.room+1,
+        puzzle: idx+1,
+        category: G.category,
+        promptId: G.generatorId,
+        student_solution_ineq: user,
+        ineq_ok: ok,
+        attempts_ineq: attempts,
+        student_interval: "",
+        interval_ok: "",
+        attempts_interval: "",
+        code_digit: ""
+      });
+      if (ok){
+        ineqFb.textContent = "Correct inequality solution!";
+        ineqFb.className = "feedback ok";
+        ineqInput.disabled = true;
+        ineqBtn.disabled = true;
+        stage2.classList.remove("hidden");
+        intInput.focus();
+      } else {
+        ineqFb.textContent = "That inequality doesn't describe the correct solution set. Check signs and inequality direction.";
+        ineqFb.className = "feedback bad";
+        if (attempts===2){ ineqHint.classList.remove("hidden"); }
+        if (attempts>=TRIES_PER_STAGE){
+          ineqFb.innerHTML = `Correct inequality solution: <span class="kbd">${G.solutionStr}</span>. Generating a parallel version…`;
+          setTimeout(()=> resetPuzzle(idx), 800);
+        }
+      }
+    }
+
+    function checkInterval(){
+      const userRaw = intInput.value;
+      const userObj = parseInterval(userRaw);
+      const solObj = solutionToInterval(G.solutionStr);
+      const ok = intervalEquivalent(userObj, solObj);
+      const attempts = ++state.attemptsInt[state.room][idx];
+      const digit = digitFromSolutionString(G.solutionStr);
+      logAttempt({
+        timestamp:new Date().toISOString(),
+        room: state.room+1,
+        puzzle: idx+1,
+        category: G.category,
+        promptId: G.generatorId,
+        student_solution_ineq: "",
+        ineq_ok: "",
+        attempts_ineq: state.attemptsIneq[state.room][idx],
+        student_interval: userRaw,
+        interval_ok: ok,
+        attempts_interval: attempts,
+        code_digit: ok? digit : ""
+      });
+      if (ok){
+        intFb.textContent = `Interval correct! Digit for this puzzle: ${digit}`;
+        intFb.className = "feedback ok";
+        intInput.disabled = true;
+        intBtn.disabled = true;
+        addDigit(digit);
+      } else {
+        intFb.innerHTML = "That interval doesn't match. Remember: <b>use parentheses with ±infinity</b> and match open/closed at finite bounds.";
+        intFb.className = "feedback bad";
+        if (attempts===2){ intHint.classList.remove("hidden"); }
+        if (attempts>=TRIES_PER_STAGE){
+          intFb.innerHTML = `Correct interval: <span class="kbd">${intervalToString(solObj)}</span>. Generating a parallel version…`;
+          setTimeout(()=> resetPuzzle(idx), 800);
+        }
+      }
+      document.getElementById("nextRoomBtn").disabled = !state.digits.every(d=>d!==null) || state.room===NUM_ROOMS-1;
+    }
+
+    function resetPuzzle(which){
+      state.versions[state.room][which] += 1;
+      state.attemptsIneq[state.room][which] = 0;
+      state.attemptsInt[state.room][which] = 0;
+      state.digits[which] = null;
+      render();
+    }
+
+    ineqBtn.addEventListener("click", checkIneq);
+    ineqInput.addEventListener("keydown", e=>{ if(e.key==="Enter") checkIneq(); });
+
+    intBtn.addEventListener("click", checkInterval);
+    intInput.addEventListener("keydown", e=>{ if(e.key==="Enter") checkInterval(); });
+
+    wrap.querySelector(`#reset-${idx}`).addEventListener("click", ()=> resetPuzzle(idx));
+  });
+}
+
+function nextRoom(){
+  if (state.room<NUM_ROOMS-1 && state.digits.every(d=>d!==null)){
+    state.room++;
+    state.digits=[null,null,null,null];
+    render();
+  }
+}
+function prevRoom(){
+  if (state.room>0){
+    state.room--;
+    state.digits=[null,null,null,null];
+    render();
+  }
+}
+
+/*** TEACHER MODE ***/
+document.getElementById("teacherBtn").addEventListener("click", ()=>{
+  const pin = prompt("Enter teacher PIN:");
+  if (String(pin)===String(TEACHER_PIN)){
+    state.teacher = !state.teacher;
+    render();
+  } else if (pin!==null){
+    alert("Incorrect PIN.");
+  }
+});
+
+/*** EXPORT ***/
+document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+/*** NAV ***/
+document.getElementById("nextRoomBtn").addEventListener("click", nextRoom);
+document.getElementById("prevRoomBtn").addEventListener("click", prevRoom);
+
+/*** INIT ***/
+render();
+</script>
+</body>
+</html>

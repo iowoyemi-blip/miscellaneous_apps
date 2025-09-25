@@ -1,0 +1,728 @@
+<!-- escape_room_student.html (fixed) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Escape Room — Solving Literal Equations (Student)</title>
+<style>
+  :root{
+    --bg:#0e0f14;
+    --panel:#151823;
+    --panel-2:#1c2030;
+    --text:#f2f5ff;
+    --muted:#b7c0d9;
+    --accent:#6ee7ff;
+    --accent-2:#a78bfa;
+    --good:#10b981;
+    --bad:#ef4444;
+    --warn:#f59e0b;
+    --focus:#93c5fd;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+    color:var(--text);
+    background: radial-gradient(1200px 800px at 80% -10%, #1a2032 0%, #0e0f14 60%) no-repeat fixed;
+  }
+  header{
+    padding:18px 20px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    border-bottom:1px solid #24283a;
+    background:linear-gradient(180deg,#161a27,#0f121b);
+    position:sticky;top:0;z-index:10;
+  }
+  .chip{padding:8px 12px;border-radius:999px;background:var(--panel-2);color:var(--muted);font-weight:600;font-size:13px;border:1px solid #23283a}
+  .chip strong{color:var(--text)}
+  .container{max-width:960px;margin:22px auto;padding:0 16px 64px}
+  .card{background:linear-gradient(180deg,#171b29,#111522);border:1px solid #22263a;border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .pad{padding:18px}
+  h1{margin:8px 0 2px;font-size:28px}
+  h2{margin:0 0 8px;font-size:20px;color:#d9e2ff}
+  .muted{color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .controls{display:flex;gap:10px;flex-wrap:wrap}
+  button{
+    background:linear-gradient(180deg,#2a314a,#21273c);
+    color:var(--text);border:1px solid #303754;
+    border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.25);
+  }
+  button:hover{filter:brightness(1.07)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  input[type="text"]{
+    width:100%;padding:12px 14px;border-radius:12px;background:#0f1220;color:var(--text);
+    border:1px solid #253055;outline:none
+  }
+  input[type="text"]:focus{border-color:var(--focus); box-shadow:0 0 0 3px rgba(147,197,253,.15)}
+  .status{padding:12px 14px;border-radius:12px;font-weight:700}
+  .ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);color:#c6ffe4}
+  .bad{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);color:#ffd2d2}
+  .warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#ffe9c2}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#11172a;border:1px solid #2c3555;padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted)}
+  .progress{height:10px;background:#0c1020;border:1px solid #2a3050;border-radius:999px;overflow:hidden}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+  .kbd{padding:2px 6px;border-radius:6px;background:#101426;border:1px solid #2a3050;color:#c5d2ff;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  .codebox{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#0d1222;border:1px dashed #2b3358;color:#e7ecff;padding:8px 10px;border-radius:10px}
+  .roomcode{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .roomcode .cell{background:#0d1222;border:1px solid #2b3358;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;height:56px;font-weight:800}
+  .celebrate{position:fixed;inset:0;pointer-events:none;display:none}
+  .confetti{position:absolute;width:8px;height:14px;opacity:.9}
+  .small{font-size:13px;color:#9fb1ff}
+  .hint{font-size:14px;color:#eabfff}
+  .hr{height:1px;background:#232845;margin:12px 0}
+  .tag{font-size:12px;color:#d6dbff;background:#1c2238;border:1px solid #2c3555;border-radius:999px;padding:4px 8px}
+  ul.inline{padding-left:18px;margin:6px 0}
+</style>
+</head>
+<body>
+<header role="banner" aria-label="Game header">
+  <div class="chip" aria-live="polite">Topic: <strong>Solving Literal Equations</strong></div>
+  <div class="chip">Mode: <strong>Sequential</strong></div>
+  <div class="chip">Rooms: <strong>8</strong></div>
+  <div class="chip">Puzzles/Room: <strong>4</strong></div>
+  <div class="chip">Variable: <strong>x</strong></div>
+  <div style="flex:1"></div>
+  <button id="exportBtn" aria-label="Export CSV">Export CSV</button>
+</header>
+
+<div class="container">
+  <main class="card" role="main" aria-labelledby="roomTitle">
+    <div class="pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
+        <div>
+          <div class="pill">Progress</div>
+          <h1 id="roomTitle">Room 1 / 8</h1>
+          <div class="muted" id="categoryLabel">Category: </div>
+        </div>
+        <div style="min-width:220px">
+          <div class="progress" aria-label="Overall progress"><div id="progressBar"></div></div>
+          <div class="small" id="progressText" style="text-align:right;margin-top:6px">0 / 32 solved</div>
+        </div>
+      </div>
+      <div class="hr"></div>
+
+      <section aria-label="Puzzle area">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="puzzleHeader">Puzzle 1 / 4</h2>
+          <span class="tag" id="promptIdTag">ID: —</span>
+        </div>
+        <p id="promptText" style="font-size:18px;line-height:1.5;margin-top:6px"></p>
+
+        <div class="hr"></div>
+
+        <div aria-label="Step 1: write the rearranged formula">
+          <p><strong>Step 1 — Write your equation</strong> (isolate <span class="kbd">x</span>, e.g., <span class="kbd">x = …</span>). One equals sign only.</p>
+          <label class="muted" for="eqInput">Your equation (use x):</label>
+          <input id="eqInput" type="text" inputmode="text" autocomplete="off" aria-describedby="eqHelp" aria-label="Equation input"/>
+          <div id="eqHelp" class="small">Accepted: implied multiplication (<span class="kbd">3x</span>, <span class="kbd">4(x+2)</span>, <span class="kbd">ab</span>), fractions (<span class="kbd">a/b</span>), <span class="kbd">^</span> for powers.</div>
+          <div class="controls" style="margin-top:10px">
+            <button id="checkEqBtn">Check equation</button>
+            <button id="resetBtn" class="muted">Reset puzzle</button>
+          </div>
+          <div id="eqFeedback" class="status" style="display:none;margin-top:10px"></div>
+          <div id="eqAttempts" class="small" style="margin-top:6px"></div>
+          <div id="eqHint" class="hint" style="display:none;margin-top:6px"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div id="step2" aria-label="Step 2: compute a numeric value" style="display:none">
+          <p><strong>Step 2 — Solve for x numerically</strong> using these values:</p>
+          <div id="paramList" class="codebox" aria-live="polite"></div>
+          <label class="muted" for="solInput">x =</label>
+          <input id="solInput" type="text" inputmode="decimal" autocomplete="off" aria-label="Numeric solution input"/>
+          <div class="controls" style="margin-top:10px">
+            <button id="checkSolBtn">Check solution</button>
+          </div>
+          <div id="solFeedback" class="status" style="display:none;margin-top:10px"></div>
+          <div id="solAttempts" class="small" style="margin-top:6px"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <section aria-label="Room code">
+          <p><strong>Door code digits</strong> for this room (each puzzle yields one digit):</p>
+          <div class="roomcode" id="roomDigits"></div>
+          <div id="codeRule" class="small" style="margin-top:8px;color:#cde7ff"></div>
+          <ul class="small inline">
+            <li>Room 1: ones digit of |x| (rounded)</li>
+            <li>Room 2: tens digit of |x| (rounded; 0 if none)</li>
+            <li>Room 3: tenths digit of |x|</li>
+            <li>Room 4: hundredths digit of |x|</li>
+            <li>Room 5: sum of digits of ⌊|x|⌋ mod 10</li>
+            <li>Room 6: (ones + tenths) mod 10</li>
+            <li>Room 7: (tens + hundredths) mod 10</li>
+            <li>Room 8: sum of digits of ⌊|100·x|⌋ mod 10</li>
+          </ul>
+        </section>
+
+        <div class="hr"></div>
+        <div class="controls">
+          <button id="prevRoomBtn">◀ Prev room</button>
+          <button id="nextRoomBtn">Next room ▶</button>
+        </div>
+      </section>
+
+      <div class="hr"></div>
+      <section aria-label="How to play">
+        <h2>How to play</h2>
+        <ul class="small">
+          <li>Each room has 4 literal-equation puzzles. First, rewrite the formula to isolate <span class="kbd">x</span>.</li>
+          <li>Then plug in the given parameter values to compute a numeric <span class="kbd">x</span>.</li>
+          <li>Each numeric answer gives one digit for the room’s door code.</li>
+          <li>After 2 wrong tries on a step, you’ll get a hint. After 3, the correct answer flashes, then a parallel version appears.</li>
+          <li>Keyboard tips: press <span class="kbd">Enter</span> to submit; <span class="kbd">Esc</span> to clear the focused input.</li>
+        </ul>
+      </section>
+
+      <div id="celebrate" class="celebrate" aria-hidden="true"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* =========================
+   CONFIG
+========================= */
+const BASE_SEED = 1337;   // keep this to match any teacher key you may have
+const TOL = 1e-6;
+const TRIES_PER_STAGE = 3;
+const NUM_ROOMS = 8;
+const PUZZLES_PER_ROOM = 4;
+const VARIABLE = 'x';
+
+/* =========================
+   UTILITIES
+========================= */
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15, t|1); t^=t+Math.imul(t^t>>>7, t|61); return ((t^t>>>14)>>>0)/4294967296}}
+function seededRandInt(rng, min, max){ return Math.floor(rng()*(max-min+1))+min }
+function nowISO(){ return new Date().toISOString() }
+
+/* CSV logging */
+const csvRows = [];
+csvRows.push(['timestamp','room','puzzle','category','prompt_id','student_equation','equation_ok','attempts_eq','student_solution','solution_ok','attempts_sol','final_room_code_entered'].join(','));
+function logCSV(partial){
+  csvRows.push([
+    partial.timestamp || nowISO(),
+    partial.room,
+    partial.puzzle,
+    csvSafe(partial.category),
+    csvSafe(partial.promptId),
+    csvSafe(partial.studentEq ?? ''),
+    partial.eqOK ?? '',
+    partial.attemptsEq ?? '',
+    csvSafe(partial.studentSol ?? ''),
+    partial.solOK ?? '',
+    partial.attemptsSol ?? '',
+    csvSafe(partial.finalCode ?? '')
+  ].join(','));
+}
+function csvSafe(s){
+  s = String(s);
+  if(s.includes('"') || s.includes(',') || s.includes('\n')) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'escape_room_log.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* Input normalization */
+function normalizeEquationInput(s){
+  if(!s) return '';
+  s = s.replace(/×|·/g,'*').replace(/[–—−]/g,'-').replace(/÷/g,'/').replace(/\s+/g,'');
+  s = s.replace(/X/g,'x');
+  s = s.replace(/([0-9a-zA-Z\)])\(/g, '$1*(');
+  s = s.replace(/\)(?=[0-9a-zA-Z])/g, ')*');
+  s = s.replace(/([a-zA-Z])([0-9])/g, '$1*$2');
+  s = s.replace(/([0-9])([a-zA-Z])/g, '$1*$2');
+  s = s.replace(/([a-zA-Z])([a-zA-Z])/g, '$1*$2');
+  s = s.replace(/\^/g,'**');
+  return s;
+}
+function parseNumber(str){
+  str = (str||'').trim();
+  if(!str) return NaN;
+  if(/^\s*[-+]?\d+\/[-+]?\d+\s*$/.test(str)){
+    const [n,d] = str.split('/').map(Number);
+    if(d===0) return NaN;
+    return n/d;
+  }
+  const v = Number(str);
+  return isFinite(v) ? v : NaN;
+}
+
+/* Safe evaluator */
+const SAFE_CHARS = /^[0-9a-zA-Z+\-*/().\s_*]*$/; // after normalization (includes **)
+function safeEvalExpr(expr, env){
+  const s = normalizeEquationInput(expr);
+  if(!SAFE_CHARS.test(s)) throw new Error('Invalid characters');
+  const names = Object.keys(env);
+  const vals = names.map(k=>env[k]);
+  if(names.some(n=>['constructor','prototype','__proto__'].includes(n))) throw new Error('Bad var name');
+  const fn = Function(...names, `return (${s});`);
+  const out = fn(...vals);
+  if(typeof out !== 'number' || !isFinite(out)) throw new Error('Non-finite');
+  return out;
+}
+
+/* Expression equivalence for "x = …" (Step 1) */
+function checkIsolatedXEquation(userEq, targetExpr, paramNames){
+  const s = normalizeEquationInput(userEq||'');
+  const eqCount = (s.match(/=/g)||[]).length;
+  if(eqCount !== 1) return {ok:false, msg:'Your equation must have exactly one "=".'};
+  let [L,R] = s.split('=');
+  if(L === VARIABLE){ /* ok */ }
+  else if(R === VARIABLE){ [L,R] = [R,L]; }
+  else return {ok:false, msg:'Put x alone on one side (like "x=...").'};
+  for(let tries=0; tries<10; tries++){
+    const rng = mulberry32((BASE_SEED ^ (tries<<5)) >>>0);
+    for(let sample=0; sample<6; sample++){
+      const env = {x:0};
+      for(const p of paramNames){
+        let val = 0;
+        do { val = seededRandInt(rng, -6, 6); } while(val===0);
+        env[p] = val;
+      }
+      let u, t;
+      try{
+        u = safeEvalExpr(R, env);
+        t = safeEvalExpr(targetExpr, env);
+      }catch(e){ continue; }
+      if(!Number.isFinite(u) || !Number.isFinite(t) || Math.abs(u-t) > TOL){
+        return {ok:false, msg:'Not equivalent to the correct rearrangement for x.'};
+      }
+    }
+  }
+  return {ok:true, msg:'Great! Your rearranged formula for x is correct.'};
+}
+
+/* Room code rules */
+function roomRuleText(roomIndex){
+  const i = roomIndex+1;
+  switch(i){
+    case 1: return 'Digit = ones digit of |x| rounded to nearest integer.';
+    case 2: return 'Digit = tens digit of |x| rounded (0 if none).';
+    case 3: return 'Digit = tenths digit of |x| (first decimal place).';
+    case 4: return 'Digit = hundredths digit of |x| (second decimal place).';
+    case 5: return 'Digit = sum of digits of ⌊|x|⌋ mod 10.';
+    case 6: return 'Digit = (ones digit + tenths digit) of |x| mod 10.';
+    case 7: return 'Digit = (tens digit + hundredths digit) of |x| mod 10.';
+    case 8: return 'Digit = sum of digits of ⌊|100·x|⌋ mod 10.';
+    default: return '';
+  }
+}
+function toDigits(n){
+  const s = String(Math.floor(Math.abs(n)));
+  return s.split('').map(d=>Number(d));
+}
+function ones(n){ return Math.abs(Math.round(n)) % 10 }
+function tens(n){ return Math.floor(Math.abs(Math.round(n))/10) % 10 }
+function tenths(n){ return Math.floor(Math.abs(n)*10) % 10 }
+function hundredths(n){ return Math.floor(Math.abs(n)*100) % 10 }
+function codeDigitFor(roomIndex, x){
+  switch(roomIndex+1){
+    case 1: return ones(x);
+    case 2: return tens(x);
+    case 3: return tenths(x);
+    case 4: return hundredths(x);
+    case 5: return toDigits(Math.floor(Math.abs(x))).reduce((a,b)=>a+b,0)%10;
+    case 6: return (ones(x)+tenths(x))%10;
+    case 7: return (tens(x)+hundredths(x))%10;
+    case 8: return toDigits(Math.floor(Math.abs(x*100))).reduce((a,b)=>a+b,0)%10;
+  }
+  return 0;
+}
+
+/* =========================
+   PROBLEM REGISTRY
+========================= */
+const Categories = [
+  { name: 'One-step (add/subtract)', templates: [
+    { id:'C1T1', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">x + ${p.a} = ${p.b}</span>`, target:()=>`b - a`, hint:'Undo the addition by subtracting the same amount from both sides.' },
+    { id:'C1T2', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">x - ${p.a} = ${p.b}</span>`, target:()=>`b + a`, hint:'Add a to both sides.' },
+    { id:'C1T3', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a} + x = ${p.b}</span>`, target:()=>`b - a`, hint:'Move the constant by subtracting it on both sides.' },
+    { id:'C1T4', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">- ${p.a} + x = ${p.b}</span>`, target:()=>`b + a`, hint:'Add a to both sides to cancel the -a.' },
+  ]},
+  { name: 'One-step (multiply/divide)', templates: [
+    { id:'C2T1', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x = ${p.b}</span>`, target:()=>`b / a`, hint:'Undo multiplication by dividing both sides by a.' },
+    { id:'C2T2', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">x/${p.a} = ${p.b}</span>`, target:()=>`a * b`, hint:'Multiply both sides by a.' },
+    { id:'C2T3', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">-${p.a}x = ${p.b}</span>`, target:()=>`-(b / a)`, hint:'Divide both sides by -a.' },
+    { id:'C2T4', params:['a','b'], prompt:(p)=>`Solve for x: <span class="kbd">(1/${p.a})x = ${p.b}</span>`, target:()=>`a * b`, hint:'Multiply both sides by a.' },
+  ]},
+  { name: 'Two-step linear (ax + b = c)', templates: [
+    { id:'C3T1', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x + ${p.b} = ${p.c}</span>`, target:()=>`(c - b) / a`, hint:'Subtract b, then divide by a.' },
+    { id:'C3T2', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x - ${p.b} = ${p.c}</span>`, target:()=>`(c + b) / a`, hint:'Add b, then divide by a.' },
+    { id:'C3T3', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.b} + ${p.a}x = ${p.c}</span>`, target:()=>`(c - b) / a`, hint:'Move b, then divide by a.' },
+    { id:'C3T4', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}(x) + ${p.b} = ${p.c}</span>`, target:()=>`(c - b) / a`, hint:'Subtract b and divide by a.' },
+  ]},
+  { name: 'Distributive & factoring', templates: [
+    { id:'C4T1', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}(x + ${p.b}) = ${p.c}</span>`, target:()=>`(c / a) - b`, hint:'Divide by a, then subtract b.' },
+    { id:'C4T2', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}(x - ${p.b}) = ${p.c}</span>`, target:()=>`(c / a) + b`, hint:'Divide by a, then add b.' },
+    { id:'C4T3', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x + ${p.b}x = ${p.c}</span>`, target:()=>`c / (a + b)`, hint:'Factor x from the left.' },
+    { id:'C4T4', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}(x + ${p.b}) + ${p.c} = ${p.d}</span>`, target:()=>`(d - c)/a - b`, hint:'Subtract c, divide by a, then subtract b.' },
+  ]},
+  { name: 'x on both sides', templates: [
+    { id:'C5T1', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x + ${p.b} = ${p.c}x + ${p.d}</span>`, target:()=>`(d - b) / (a - c)`, hint:'Bring x-terms together; constants to the other side.' },
+    { id:'C5T2', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a} + ${p.b}x = ${p.c} + ${p.d}x</span>`, target:()=>`(a - c) / (d - b)`, hint:'Subtract bx and c from both sides.' },
+    { id:'C5T3', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}x - ${p.b} = ${p.c}x + ${p.d}</span>`, target:()=>`(d + b) / (a - c)`, hint:'Move x-terms left, constants right.' },
+    { id:'C5T4', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">${p.b}x + ${p.a} = ${p.d} + ${p.c}x</span>`, target:()=>`(d - a) / (b - c)`, hint:'Group x terms and factor x.' },
+  ]},
+  { name: 'Fractions & complex linear', templates: [
+    { id:'C6T1', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">(x - ${p.b})/${p.a} = ${p.c}</span>`, target:()=>`a*c + b`, hint:'Multiply by a, then add b.' },
+    { id:'C6T2', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">(${p.a}x + ${p.b})/${p.c} = ${p.d}</span>`, target:()=>`(c*d - b)/a`, hint:'Multiply both sides by c; then isolate x.' },
+    { id:'C6T3', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">x/${p.a} + ${p.b} = ${p.c}</span>`, target:()=>`a*(c - b)`, hint:'Subtract b, then multiply by a.' },
+    { id:'C6T4', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">(x + ${p.b})/${p.a} + ${p.c} = ${p.d}</span>`, target:()=>`a*(d - c) - b`, hint:'Subtract c first; then multiply by a; then subtract b.' },
+  ]},
+  { name: 'Proportions (cross-multiplying)', templates: [
+    { id:'C7T1', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">x/${p.a} = ${p.b}/${p.c}</span>`, target:()=>`(a*b)/c`, hint:'Cross-multiply then divide.' },
+    { id:'C7T2', params:['a','b','c','d'], prompt:(p)=>`Solve for x: <span class="kbd">(x - ${p.a})/${p.b} = ${p.c}/${p.d}</span>`, target:()=>`b*(c/d) + a`, hint:'Multiply both sides by b, then add a.' },
+    { id:'C7T3', params:['a','b','c'], prompt:(p)=>`Solve for x: <span class="kbd">${p.a}/x = ${p.b}/${p.c}</span>`, target:()=>`(a*c)/b`, hint:'Invert the proportion after cross-multiplying.' },
+    { id:'C7T4', params:['a','b','c','d','e'], prompt:(p)=>`Solve for x: <span class="kbd">(x + ${p.a})/${p.b} = (${p.c} - ${p.d})/${p.e}</span>`, target:()=>`b*((c - d)/e) - a`, hint:'Multiply by b, then subtract a.' },
+  ]},
+  { name: 'Formulas (geometry/physics style)', templates: [
+    { id:'C8T1', params:['P','y'], prompt:(p)=>`Solve for x: <span class="kbd">P = 2x + 2${p.y}</span>`, target:()=>`(P - 2*y)/2`, hint:'Subtract 2y, then divide by 2.' },
+    { id:'C8T2', params:['A','a'], prompt:(p)=>`Solve for x: <span class="kbd">A = (1/2)${p.a}x</span>`, target:()=>`(2*A)/a`, hint:'Multiply by 2, then divide by a.' },
+    { id:'C8T3', params:['V','l','w'], prompt:(p)=>`Solve for x: <span class="kbd">V = ${p.l}${p.w}x</span>`, target:()=>`V/(l*w)`, hint:'Divide both sides by l·w.' },
+    { id:'C8T4', params:['m','y','y1','x1'], prompt:(p)=>`Solve for x: <span class="kbd">m = (${p.y} - ${p.y1})/(x - ${p.x1})</span>`, target:()=>`x1 + (y - y1)/m`, hint:'Multiply by (x - x1), then solve for x.' },
+  ]},
+];
+
+/* Helper to render parameter symbols consistently in prompt */
+function makeSymbolMap(paramArray){
+  const map = {};
+  for(const k of paramArray){ map[k] = k; }
+  return map;
+}
+
+/* Generate puzzle object deterministically */
+function genPuzzle(roomIndex, puzzleIndex, variant=0){
+  const cat = Categories[roomIndex];
+  const tmpl = cat.templates[puzzleIndex % cat.templates.length];
+  const promptId = `R${roomIndex+1}P${puzzleIndex+1}-${tmpl.id}-v${variant}`;
+  const paramNames = tmpl.params.slice();
+  const targetExpr = tmpl.target();
+  // ✅ FIX: pass an ARRAY to makeSymbolMap (was incorrectly passing an object)
+  const pSymbols = makeSymbolMap(paramNames);
+  const promptHTML = tmpl.prompt(pSymbols);
+
+  function seededRandInt(rng, min, max){ return Math.floor(rng()*(max-min+1))+min }
+  function sampleNumericAssignment(){
+    const rng = mulberry32((BASE_SEED ^ ((roomIndex+1)<<10) ^ ((puzzleIndex+1)<<4) ^ (variant<<1))>>>0);
+    const env = {x:0};
+    for(const name of paramNames){
+      let v = 0, attempts=0;
+      do {
+        attempts++;
+        const span = roomIndex < 4 ? 9 : 12;
+        v = seededRandInt(rng, -span, span);
+        if(v===0) v = (rng()<0.5?1:-1) * (1 + seededRandInt(rng,0,span));
+      } while(!isFinite(v) && attempts<20);
+      env[name]=v;
+    }
+    try{
+      const xVal = safeEvalExpr(targetExpr, env);
+      if(!Number.isFinite(xVal)) throw new Error('bad');
+      return { env, xVal };
+    }catch(e){
+      for(let bump=1; bump<50; bump++){
+        for(const name of paramNames){
+          let v = env[name] + (bump%2===0? bump : -bump);
+          if(v===0) v += 1;
+          env[name]=v;
+        }
+        try{
+          const xVal = safeEvalExpr(targetExpr, env);
+          if(Number.isFinite(xVal)) return {env, xVal};
+        }catch(_){}
+      }
+      for(const name of paramNames){ env[name] = 2 + ((Math.abs(name.charCodeAt(0)) + roomIndex + puzzleIndex) % 8) }
+      const xVal = safeEvalExpr(targetExpr, env);
+      return {env, xVal};
+    }
+  }
+  const {env:paramValues, xVal} = sampleNumericAssignment();
+
+  return {
+    category: cat.name,
+    promptId,
+    promptHTML,
+    targetExpr,
+    paramNames,
+    paramValues,
+    numericX: xVal,
+    hint: tmpl.hint,
+    variant,
+    templateId: tmpl.id
+  };
+}
+
+/* =========================
+   STATE
+========================= */
+const state = {
+  roomIndex: 0,
+  puzzleIndex: 0,
+  variantMap: new Map(),
+  solved: Array(NUM_ROOMS).fill(0).map(()=>Array(PUZZLES_PER_ROOM).fill(false)),
+  digits: Array(NUM_ROOMS).fill(0).map(()=>Array(PUZZLES_PER_ROOM).fill(null)),
+  attemptsEq: 0,
+  attemptsSol: 0,
+  current: null,
+};
+
+function keyFor(r,p){ return `R${r}P${p}` }
+
+function loadPuzzle(){
+  const r = state.roomIndex, p = state.puzzleIndex;
+  const v = state.variantMap.get(keyFor(r,p)) || 0;
+  const puzzle = genPuzzle(r,p,v);
+
+  state.current = puzzle;
+  state.attemptsEq = 0;
+  state.attemptsSol = 0;
+
+  document.getElementById('roomTitle').textContent = `Room ${r+1} / ${NUM_ROOMS}`;
+  document.getElementById('categoryLabel').textContent = `Category: ${puzzle.category}`;
+  document.getElementById('puzzleHeader').textContent = `Puzzle ${p+1} / ${PUZZLES_PER_ROOM}`;
+  document.getElementById('promptText').innerHTML = puzzle.promptHTML;
+  document.getElementById('promptIdTag').textContent = `ID: ${puzzle.promptId}`;
+  document.getElementById('eqInput').value = '';
+  document.getElementById('solInput').value = '';
+  document.getElementById('eqFeedback').style.display = 'none';
+  document.getElementById('solFeedback').style.display = 'none';
+  document.getElementById('eqAttempts').textContent = `Equation attempts: 0 / ${TRIES_PER_STAGE}`;
+  document.getElementById('solAttempts').textContent = `Solution attempts: 0 / ${TRIES_PER_STAGE}`;
+  document.getElementById('eqHint').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('paramList').textContent = '';
+
+  const rc = document.getElementById('roomDigits');
+  rc.innerHTML = '';
+  for(let i=0;i<PUZZLES_PER_ROOM;i++){
+    const cell = document.createElement('div'); cell.className='cell';
+    const d = state.digits[r][i];
+    cell.textContent = d==null? '—' : String(d);
+    rc.appendChild(cell);
+  }
+  document.getElementById('codeRule').textContent = roomRuleText(r);
+
+  updateProgress();
+  updateNavButtons();
+}
+function updateNavButtons(){
+  document.getElementById('prevRoomBtn').disabled = (state.roomIndex===0);
+  const allSolved = state.solved[state.roomIndex].every(v=>v);
+  document.getElementById('nextRoomBtn').disabled = !allSolved || state.roomIndex===NUM_ROOMS-1;
+}
+function updateProgress(){
+  let totalSolved = 0;
+  for(const row of state.solved) for(const b of row) if(b) totalSolved++;
+  const pc = Math.round(100*totalSolved/(NUM_ROOMS*PUZZLES_PER_ROOM));
+  const bar = document.getElementById('progressBar');
+  bar.style.width = pc + '%';
+  document.getElementById('progressText').textContent = `${totalSolved} / ${NUM_ROOMS*PUZZLES_PER_ROOM} solved`;
+}
+
+/* Celebration */
+function celebrate(){
+  const overlay = document.getElementById('celebrate');
+  overlay.innerHTML = '';
+  overlay.style.display = 'block';
+  const W = innerWidth, H = innerHeight;
+  for(let i=0;i<140;i++){
+    const d = document.createElement('div');
+    d.className='confetti';
+    d.style.left = Math.random()*W+'px';
+    d.style.top = '-20px';
+    d.style.background = `hsl(${Math.random()*360}, 90%, 60%)`;
+    d.animate([
+      {transform:`translateY(0) rotate(0deg)`, opacity:1},
+      {transform:`translateY(${H+40}px) rotate(${(Math.random()*720-360)}deg)`, opacity:0.8}
+    ], {duration: 1200 + Math.random()*1200, iterations:1, easing:'ease-in'});
+    overlay.appendChild(d);
+  }
+  setTimeout(()=>{ overlay.style.display='none'; }, 1600);
+}
+
+/* Formatting helper */
+function fmtNum(n){
+  if(!isFinite(n)) return String(n);
+  const asStr = n.toString();
+  if(asStr.length<=10) return asStr;
+  return n.toFixed(5);
+}
+
+/* =========================
+   EVENT HANDLERS
+========================= */
+function setFeedback(el, ok, msg){
+  el.className = 'status ' + (ok? 'ok' : 'bad');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function setWarn(el, msg){
+  el.className = 'status warn';
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+/* Check equation (Step 1) */
+document.getElementById('checkEqBtn').addEventListener('click', ()=>{
+  const cur = state.current;
+  const userEq = document.getElementById('eqInput').value;
+  const fb = document.getElementById('eqFeedback');
+  if(!userEq.trim()){
+    setWarn(fb,'Type your equation first.'); return;
+  }
+  const res = checkIsolatedXEquation(userEq, cur.targetExpr, cur.paramNames);
+  state.attemptsEq++;
+  document.getElementById('eqAttempts').textContent = `Equation attempts: ${state.attemptsEq} / ${TRIES_PER_STAGE}`;
+
+  logCSV({
+    room: state.roomIndex+1,
+    puzzle: state.puzzleIndex+1,
+    category: cur.category,
+    promptId: cur.promptId,
+    studentEq: userEq,
+    eqOK: res.ok?1:0,
+    attemptsEq: state.attemptsEq
+  });
+
+  if(res.ok){
+    setFeedback(fb,true,'Correct! Now plug in the given values to compute x.');
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('paramList').textContent = cur.paramNames.map(k=>`${k} = ${cur.paramValues[k]}`).join(', ');
+    document.getElementById('solInput').focus();
+  }else{
+    setFeedback(fb,false,res.msg);
+    if(state.attemptsEq===2){
+      const hint = cur.hint || 'Work to isolate x step-by-step.';
+      document.getElementById('eqHint').textContent = 'Hint: ' + hint;
+      document.getElementById('eqHint').style.display = 'block';
+    }
+    if(state.attemptsEq>=TRIES_PER_STAGE){
+      setFeedback(fb,false,`Answer shown, then regenerating a parallel version: x = ${cur.targetExpr}`);
+      const key = keyFor(state.roomIndex, state.puzzleIndex);
+      state.variantMap.set(key, (state.variantMap.get(key)||0)+1);
+      setTimeout(loadPuzzle, 1200);
+    }
+  }
+});
+
+/* Check solution (Step 2) */
+document.getElementById('checkSolBtn').addEventListener('click', ()=>{
+  const cur = state.current;
+  const user = parseNumber(document.getElementById('solInput').value);
+  const fb = document.getElementById('solFeedback');
+  if(!isFinite(user)){
+    setWarn(fb,'Enter a number (integer, decimal, or fraction like a/b).'); return;
+  }
+  const ok = Math.abs(user - cur.numericX) <= TOL;
+  state.attemptsSol++;
+  document.getElementById('solAttempts').textContent = `Solution attempts: ${state.attemptsSol} / ${TRIES_PER_STAGE}`;
+
+  logCSV({
+    room: state.roomIndex+1,
+    puzzle: state.puzzleIndex+1,
+    category: cur.category,
+    promptId: cur.promptId,
+    studentSol: document.getElementById('solInput').value,
+    solOK: ok?1:0,
+    attemptsSol: state.attemptsSol,
+    finalCode: state.digits[state.roomIndex].map(d=>d??'-').join('')
+  });
+
+  if(ok){
+    setFeedback(fb,true,'Correct! Digit added to the room code.');
+    const d = codeDigitFor(state.roomIndex, cur.numericX);
+    state.digits[state.roomIndex][state.puzzleIndex] = d;
+    state.solved[state.roomIndex][state.puzzleIndex] = true;
+    const rc = document.getElementById('roomDigits');
+    rc.children[state.puzzleIndex].textContent = String(d);
+    updateProgress();
+
+    if(state.solved[state.roomIndex].every(v=>v)){
+      celebrate();
+      document.getElementById('nextRoomBtn').disabled = (state.roomIndex===NUM_ROOMS-1);
+    }else{
+      if(state.puzzleIndex < PUZZLES_PER_ROOM-1){
+        state.puzzleIndex++;
+        loadPuzzle();
+      }
+    }
+  }else{
+    setFeedback(fb,false,'Not quite. Recompute carefully and try again.');
+    if(state.attemptsSol>=TRIES_PER_STAGE){
+      setFeedback(fb,false,`Answer shown, then regenerating numbers: x = ${fmtNum(cur.numericX)}`);
+      const key = keyFor(state.roomIndex, state.puzzleIndex);
+      state.variantMap.set(key, (state.variantMap.get(key)||0)+1);
+      setTimeout(loadPuzzle, 1200);
+    }
+  }
+});
+
+/* Reset puzzle (regenerate numbers only) */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  const key = keyFor(state.roomIndex, state.puzzleIndex);
+  state.variantMap.set(key, (state.variantMap.get(key)||0)+1);
+  loadPuzzle();
+});
+
+/* Room navigation */
+function updateNavButtons(){
+  document.getElementById('prevRoomBtn').disabled = (state.roomIndex===0);
+  const allSolved = state.solved[state.roomIndex].every(v=>v);
+  document.getElementById('nextRoomBtn').disabled = !allSolved || state.roomIndex===NUM_ROOMS-1;
+}
+document.getElementById('prevRoomBtn').addEventListener('click', ()=>{
+  if(state.roomIndex>0){ state.roomIndex--; state.puzzleIndex=0; loadPuzzle(); }
+});
+document.getElementById('nextRoomBtn').addEventListener('click', ()=>{
+  if(state.roomIndex<NUM_ROOMS-1 && state.solved[state.roomIndex].every(v=>v)){
+    state.roomIndex++; state.puzzleIndex=0; loadPuzzle();
+  }
+});
+
+function updateProgress(){
+  let totalSolved = 0;
+  for(const row of state.solved) for(const b of row) if(b) totalSolved++;
+  const pc = Math.round(100*totalSolved/(NUM_ROOMS*PUZZLES_PER_ROOM));
+  const bar = document.getElementById('progressBar');
+  bar.style.width = pc + '%';
+  document.getElementById('progressText').textContent = `${totalSolved} / ${NUM_ROOMS*PUZZLES_PER_ROOM} solved`;
+}
+
+/* Keyboard helpers */
+window.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){
+    const step2Vis = document.getElementById('step2').style.display !== 'none';
+    if(step2Vis) document.getElementById('checkSolBtn').click();
+    else document.getElementById('checkEqBtn').click();
+  }else if(e.key==='Escape'){
+    const active = document.activeElement;
+    if(active && (active.id==='eqInput' || active.id==='solInput')) active.value='';
+  }
+});
+
+/* Init room digits cells */
+(function initUI(){
+  const rc = document.getElementById('roomDigits');
+  for(let i=0;i<PUZZLES_PER_ROOM;i++){
+    const cell = document.createElement('div'); cell.className='cell'; cell.textContent='—';
+    rc.appendChild(cell);
+  }
+})();
+
+/* Start */
+loadPuzzle();
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplifying Radicals Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                },
+            },
+        },
+    }
+    </script>
+    <!-- MathJax for rendering LaTeX -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .correct-answer {
+            border-color: #22c55e; /* green-500 */
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .incorrect-answer {
+            border-color: #ef4444; /* red-500 */
+            background-color: #fef2f2; /* red-50 */
+        }
+        /* Custom focus ring */
+        .custom-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* blue-400 equivalent */
+            border-color: #60a5fa; /* blue-400 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen p-4">
+    <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-4xl">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Simplifying Radicals Quiz</h1>
+            <p class="text-gray-600 mt-2">Simplify each expression. Use the '√' button to insert a radical symbol.</p>
+        </div>
+
+        <!-- Quiz questions will be inserted here -->
+        <div id="quiz-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+        <!-- Submission and Results Section -->
+        <div class="mt-8 text-center">
+            <button id="reset-btn" class="bg-gray-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 ease-in-out">
+                Reset Quiz
+            </button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quizContainer = document.getElementById('quiz-container');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // --- Quiz Data with Solutions ---
+            const questions = [
+                // Based on sqrt(18) -> 3√2
+                { question: "\\(\\sqrt{18}\\)", answer: "3√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 18. That is 9.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{9 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{9} \\cdot \\sqrt{2} = 3\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{50}\\)", answer: "5√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 50. That is 25.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{25 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{25} \\cdot \\sqrt{2} = 5\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{8}\\)", answer: "2√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 8. That is 4.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{4 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{4} \\cdot \\sqrt{2} = 2\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{32}\\)", answer: "4√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 32. That is 16.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{16 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{16} \\cdot \\sqrt{2} = 4\\sqrt{2}\\)." },
+
+                // Based on sqrt(28) -> 2√7
+                { question: "\\(\\sqrt{28}\\)", answer: "2√7", solution: "<b>Step 1:</b> Find the largest perfect square that divides 28. That is 4.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{4 \\cdot 7}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{4} \\cdot \\sqrt{7} = 2\\sqrt{7}\\)." },
+                { question: "\\(\\sqrt{63}\\)", answer: "3√7", solution: "<b>Step 1:</b> Find the largest perfect square that divides 63. That is 9.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{9 \\cdot 7}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{9} \\cdot \\sqrt{7} = 3\\sqrt{7}\\)." },
+                { question: "\\(\\sqrt{20}\\)", answer: "2√5", solution: "<b>Step 1:</b> Find the largest perfect square that divides 20. That is 4.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{4 \\cdot 5}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{4} \\cdot \\sqrt{5} = 2\\sqrt{5}\\)." },
+                { question: "\\(\\sqrt{45}\\)", answer: "3√5", solution: "<b>Step 1:</b> Find the largest perfect square that divides 45. That is 9.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{9 \\cdot 5}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{9} \\cdot \\sqrt{5} = 3\\sqrt{5}\\)." },
+                
+                // Based on sqrt(162) -> 9√2
+                { question: "\\(\\sqrt{162}\\)", answer: "9√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 162. That is 81.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{81 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{81} \\cdot \\sqrt{2} = 9\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{98}\\)", answer: "7√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 98. That is 49.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{49 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{49} \\cdot \\sqrt{2} = 7\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{128}\\)", answer: "8√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 128. That is 64.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{64 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{64} \\cdot \\sqrt{2} = 8\\sqrt{2}\\)." },
+                { question: "\\(\\sqrt{200}\\)", answer: "10√2", solution: "<b>Step 1:</b> Find the largest perfect square that divides 200. That is 100.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{100 \\cdot 2}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{100} \\cdot \\sqrt{2} = 10\\sqrt{2}\\)." },
+
+                // Based on sqrt(16a^2) -> 4a
+                { question: "\\(\\sqrt{16a^2}\\)", answer: "4a", solution: "<b>Step 1:</b> Separate the number and variable: \\(\\sqrt{16} \\cdot \\sqrt{a^2}\\).<br><b>Step 2:</b> \\(\\sqrt{16} = 4\\).<br><b>Step 3:</b> \\(\\sqrt{a^2} = a\\).<br><b>Step 4:</b> Combine: \\(4a\\)." },
+                { question: "\\(\\sqrt{25b^4}\\)", answer: "5b^2", solution: "<b>Step 1:</b> Separate: \\(\\sqrt{25} \\cdot \\sqrt{b^4}\\).<br><b>Step 2:</b> \\(\\sqrt{25} = 5\\).<br><b>Step 3:</b> \\(\\sqrt{b^4} = b^{4/2} = b^2\\).<br><b>Step 4:</b> Combine: \\(5b^2\\)." },
+                { question: "\\(\\sqrt{36c^6}\\)", answer: "6c^3", solution: "<b>Step 1:</b> Separate: \\(\\sqrt{36} \\cdot \\sqrt{c^6}\\).<br><b>Step 2:</b> \\(\\sqrt{36} = 6\\).<br><b>Step 3:</b> \\(\\sqrt{c^6} = c^{6/2} = c^3\\).<br><b>Step 4:</b> Combine: \\(6c^3\\)." },
+                { question: "\\(\\sqrt{81d^8}\\)", answer: "9d^4", solution: "<b>Step 1:</b> Separate: \\(\\sqrt{81} \\cdot \\sqrt{d^8}\\).<br><b>Step 2:</b> \\(\\sqrt{81} = 9\\).<br><b>Step 3:</b> \\(\\sqrt{d^8} = d^{8/2} = d^4\\).<br><b>Step 4:</b> Combine: \\(9d^4\\)." },
+
+                // Based on sqrt(12x^2y^5) -> 2xy^2√3y
+                { question: "\\(\\sqrt{12x^2y^5}\\)", answer: "2xy^2√3y", solution: "<b>Step 1:</b> Break down each part: \\(\\sqrt{4 \\cdot 3 \\cdot x^2 \\cdot y^4 \\cdot y}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(4x^2y^4) \\cdot (3y)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{4x^2y^4} \\cdot \\sqrt{3y}\\).<br><b>Step 4:</b> Simplify: \\(2xy^2\\sqrt{3y}\\)." },
+                { question: "\\(\\sqrt{20a^2b^3}\\)", answer: "2ab√5b", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{4 \\cdot 5 \\cdot a^2 \\cdot b^2 \\cdot b}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(4a^2b^2) \\cdot (5b)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{4a^2b^2} \\cdot \\sqrt{5b}\\).<br><b>Step 4:</b> Simplify: \\(2ab\\sqrt{5b}\\)." },
+                { question: "\\(\\sqrt{27c^4d^7}\\)", answer: "3c^2d^3√3d", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{9 \\cdot 3 \\cdot c^4 \\cdot d^6 \\cdot d}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(9c^4d^6) \\cdot (3d)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{9c^4d^6} \\cdot \\sqrt{3d}\\).<br><b>Step 4:</b> Simplify: \\(3c^2d^3\\sqrt{3d}\\)." },
+                { question: "\\(\\sqrt{50g^8h^9}\\)", answer: "5g^4h^4√2h", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{25 \\cdot 2 \\cdot g^8 \\cdot h^8 \\cdot h}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(25g^8h^8) \\cdot (2h)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{25g^8h^8} \\cdot \\sqrt{2h}\\).<br><b>Step 4:</b> Simplify: \\(5g^4h^4\\sqrt{2h}\\)." },
+
+                // Based on sqrt(45a^4b^9c^6) -> 3a^2b^4c^3√5b
+                { question: "\\(\\sqrt{45a^4b^9c^6}\\)", answer: "3a^2b^4c^3√5b", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{9 \\cdot 5 \\cdot a^4 \\cdot b^8 \\cdot b \\cdot c^6}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(9a^4b^8c^6) \\cdot (5b)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{9a^4b^8c^6} \\cdot \\sqrt{5b}\\).<br><b>Step 4:</b> Simplify: \\(3a^2b^4c^3\\sqrt{5b}\\)." },
+                { question: "\\(\\sqrt{72x^2y^5z^8}\\)", answer: "6xy^2z^4√2y", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{36 \\cdot 2 \\cdot x^2 \\cdot y^4 \\cdot y \\cdot z^8}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(36x^2y^4z^8) \\cdot (2y)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{36x^2y^4z^8} \\cdot \\sqrt{2y}\\).<br><b>Step 4:</b> Simplify: \\(6xy^2z^4\\sqrt{2y}\\)." },
+                { question: "\\(\\sqrt{80a^6b^3c^4}\\)", answer: "4a^3bc^2√5b", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{16 \\cdot 5 \\cdot a^6 \\cdot b^2 \\cdot b \\cdot c^4}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(16a^6b^2c^4) \\cdot (5b)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{16a^6b^2c^4} \\cdot \\sqrt{5b}\\).<br><b>Step 4:</b> Simplify: \\(4a^3bc^2\\sqrt{5b}\\)." },
+                { question: "\\(\\sqrt{98m^8n^7p^2}\\)", answer: "7m^4n^3p√2n", solution: "<b>Step 1:</b> Break down: \\(\\sqrt{49 \\cdot 2 \\cdot m^8 \\cdot n^6 \\cdot n \\cdot p^2}\\).<br><b>Step 2:</b> Group perfect squares: \\(\\sqrt{(49m^8n^6p^2) \\cdot (2n)}\\).<br><b>Step 3:</b> Separate: \\(\\sqrt{49m^8n^6p^2} \\cdot \\sqrt{2n}\\).<br><b>Step 4:</b> Simplify: \\(7m^4n^3p\\sqrt{2n}\\)." },
+            ];
+
+            // --- Functions ---
+            
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function generateQuiz() {
+                quizContainer.innerHTML = '';
+                shuffle(questions);
+
+                questions.forEach((q, index) => {
+                    const questionCard = document.createElement('div');
+                    questionCard.className = 'bg-gray-100 p-5 rounded-xl flex flex-col items-center justify-center space-y-4';
+                    
+                    const questionText = document.createElement('p');
+                    questionText.className = 'text-2xl font-medium';
+                    questionText.textContent = q.question;
+                    
+                    const answerWrapper = document.createElement('div');
+                    answerWrapper.className = 'relative flex items-center w-full';
+
+                    const answerInput = document.createElement('input');
+                    answerInput.type = 'text';
+                    answerInput.className = 'w-full pl-3 pr-10 py-2 border-2 border-gray-300 rounded-md transition-colors duration-200 custom-focus';
+                    answerInput.setAttribute('autocomplete', 'off');
+                    answerInput.setAttribute('spellcheck', 'false');
+
+                    const radicalButton = document.createElement('button');
+                    radicalButton.textContent = '√';
+                    radicalButton.className = 'absolute right-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold w-8 h-8 rounded-md flex items-center justify-center transition-colors duration-200';
+                    radicalButton.type = 'button';
+                    
+                    radicalButton.addEventListener('click', () => {
+                        const start = answerInput.selectionStart;
+                        const end = answerInput.selectionEnd;
+                        const text = answerInput.value;
+                        answerInput.value = text.substring(0, start) + '√' + text.substring(end);
+                        answerInput.focus();
+                        answerInput.setSelectionRange(start + 1, start + 1);
+                    });
+
+                    const submitCardButton = document.createElement('button');
+                    submitCardButton.textContent = 'Submit';
+                    submitCardButton.className = 'w-full bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors duration-200';
+
+                    const solutionDiv = document.createElement('div');
+                    solutionDiv.className = 'hidden w-full p-3 mt-2 text-sm text-left bg-indigo-50 border border-indigo-200 rounded-md';
+
+                    submitCardButton.addEventListener('click', () => {
+                        const userAnswer = answerInput.value.replace(/\s+/g, '').toLowerCase();
+                        const correctAnswer = q.answer.replace(/\s+/g, '').toLowerCase();
+
+                        answerInput.classList.remove('correct-answer', 'incorrect-answer');
+
+                        if (userAnswer === correctAnswer) {
+                            answerInput.classList.add('correct-answer');
+                        } else {
+                            answerInput.classList.add('incorrect-answer');
+                        }
+                        
+                        answerInput.disabled = true;
+                        submitCardButton.disabled = true;
+                        submitCardButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                        solutionDiv.innerHTML = q.solution;
+                        solutionDiv.classList.remove('hidden');
+                        
+                        if (window.MathJax) {
+                            window.MathJax.typesetPromise([solutionDiv]);
+                        }
+                    });
+
+                    answerWrapper.appendChild(answerInput);
+                    answerWrapper.appendChild(radicalButton);
+                    questionCard.appendChild(questionText);
+                    questionCard.appendChild(answerWrapper);
+                    questionCard.appendChild(submitCardButton);
+                    questionCard.appendChild(solutionDiv);
+                    quizContainer.appendChild(questionCard);
+                });
+                
+                if (window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }
+            
+            resetBtn.addEventListener('click', generateQuiz);
+            generateQuiz();
+        });
+    </script>
+</body>
+</html>
+

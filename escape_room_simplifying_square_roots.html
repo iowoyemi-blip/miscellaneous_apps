@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Escape Room — Simplifying Square Roots</title>
+<style>
+  :root{ --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#7c3aed; --good:#16a34a; --bad:#dc2626; --warn:#f59e0b; --ok:#22c55e; --no:#ef4444; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(135deg,#0b1226,#0e1630 40%,#0d1b2a);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:980px;margin:auto;padding:24px}
+  .card{background:rgba(17,24,39,.85);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:22px;box-shadow:0 10px 25px rgba(0,0,0,.35)}
+  h1{font-size:clamp(24px,3vw,34px);margin:0 0 8px}
+  .sub{color:var(--muted);margin:0 0 16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  input{background:#0b1020;color:var(--ink);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;font-size:16px;outline:none}
+  .btn{cursor:pointer;border:0;border-radius:12px;padding:10px 16px;font-weight:700;letter-spacing:.3px}
+  .btn.primary{background:var(--accent);color:white}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--ink)}
+  .locks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  .lock{background:#0b1020;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .12s, box-shadow .12s}
+  .lock:hover{transform:translateY(-2px);box-shadow:0 10px 15px rgba(0,0,0,.25)}
+  .lock .name{font-weight:900}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:var(--muted);font-weight:800;font-size:12px}
+  .badge.ok{color:#86efac;border-color:rgba(34,197,94,.5)}
+  .grid{display:grid;grid-template-columns:repeat(2, minmax(260px,1fr));gap:12px;margin-top:10px}
+  .q{background:#0c1328;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px}
+  .q .prompt{font-weight:800;text-align:center;margin:4px 0 10px;font-size:18px}
+  .choice{display:block;width:100%;text-align:center;background:#0b1020;border:1px solid rgba(255,255,255,.08);color:var(--ink);border-radius:10px;padding:10px;font-weight:700;cursor:pointer;margin:6px 0;transition:.12s background,.12s transform}
+  .choice.correct{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+  .choice.wrong{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
+  .panel{margin-top:16px;display:none}
+  .codebox{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .digits{display:flex;gap:8px}
+  .digit{width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-weight:900;background:#0b1020}
+  .open{background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.35)}
+  .math sup{font-size:.6em}
+  .note{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="screen-start" class="card">
+    <h1>Escape Room — Simplifying Square Roots</h1>
+    <p class="sub">Open all four locks by answering correctly. Code rule: <b>4 digits = last digits of the coefficients</b> of your simplified answers (in order).</p>
+    <div class="row">
+      <label>Player name <input id="player" placeholder="e.g., Jordan A." autocomplete="off"></label>
+      <label style="display:flex;align-items:center;gap:8px"><input id="shuffle" type="checkbox" checked> Shuffle answer choices</label>
+    </div>
+    <p class="note">For each lock, answer all 4 questions correctly. Your 4-digit code is the LAST DIGIT of the absolute value of the coefficient OUTSIDE the radical for each simplified answer (in order). Example: answers 3√(5), -14√(2), √(3), 12√(7) → code 3412.</p>
+    <button class="btn primary" id="start">Enter the Room</button>
+  </div>
+
+  <div id="screen-game" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <div class="badge">Player: <span id="who">Player</span></div>
+      <div class="badge">Locks opened: <span id="count">0</span>/4</div>
+      <div class="badge">Attempts: <span id="tries">0</span></div>
+    </div>
+    <div class="locks" id="locks"></div>
+
+    <div id="panel" class="panel">
+      <h3 id="lname" style="margin:6px 0 6px">Lock</h3>
+      <div class="grid" id="grid"></div>
+      <div class="codebox">
+        <div class="digits" id="digits"></div>
+        <button class="btn primary" id="tryOpen" disabled>Try Code</button>
+        <span class="badge" id="msg"></span>
+      </div>
+      <p class="note">Digits update as you answer. Correct answers turn green; wrong turns red. When the code matches, the lock opens.</p>
+    </div>
+  </div>
+
+  <div id="screen-done" class="card" style="display:none">
+    <h1>Escaped! 🎉</h1>
+    <p class="sub">Great work, <b id="finName"></b> — you opened all the locks.</p>
+    <div class="row">
+      <div class="badge">Attempts: <span id="finTries"></span></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn primary" id="again">Play Again</button>
+      <button class="btn ghost" id="csv">Export CSV</button>
+      <button class="btn ghost" id="json">Export JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DATA = {"BANK": [{"prompt": "√27", "correct": "3√(3)", "choices": ["6√(3)", "√27", "3√(3*2)"]}, {"prompt": "√20", "correct": "2√(5)", "choices": ["4√(5)", "√20", "2√(5*2)"]}, {"prompt": "√200", "correct": "10√(2)", "choices": ["20√(2)", "√200", "10√(2*2)"]}, {"prompt": "3√28", "correct": "6√(7)", "choices": ["12√(7)", "6√(7*2)", "3√28"]}, {"prompt": "2√12", "correct": "4√(3)", "choices": ["2√12", "4√(3*2)", "8√(3)"]}, {"prompt": "-2√50", "correct": "-10√(2)", "choices": ["-20√(2)", "-2√50", "-10√(2*2)"]}, {"prompt": "-3√72", "correct": "-18√(2)", "choices": ["-3√72", "-36√(2)", "-18√(2*2)"]}, {"prompt": "√(32x^3)", "correct": "4x√(2x)", "choices": ["4x√(2x*2)", "8x√(2x)", "√(32x^3)"]}, {"prompt": "√(18xm^5)", "correct": "3m^2√(2mx)", "choices": ["3m^2√(2mx*2)", "6m^2√(2mx)", "√(18xm^5)"]}, {"prompt": "√(45x^2y^7)", "correct": "3xy^3√(5y)", "choices": ["6xy^3√(5y)", "3xy^3√(5y*2)", "√(45x^2y^7)"]}, {"prompt": "√(27a^3y^2z^6)", "correct": "3ayz^3√(3a)", "choices": ["√(27a^3y^2z^6)", "6ayz^3√(3a)", "3ayz^3√(3a*2)"]}, {"prompt": "-3√(18z)", "correct": "-9√(2z)", "choices": ["-9√(2z*2)", "-3√(18z)", "-18√(2z)"]}, {"prompt": "-2de√(28d^4e^9)", "correct": "-4d^3e^5√(7e)", "choices": ["-8d^3e^5√(7e)", "-4d^3e^5√(7e*2)", "-2de√(28d^4e^9)"]}, {"prompt": "3f^2g^3√(48gf^2)", "correct": "12f^3g^3√(3g)", "choices": ["3f^2g^3√(48gf^2)", "12f^3g^3√(3g*2)", "24f^3g^3√(3g)"]}, {"prompt": "4wp^3√(8kw^2p^10t^8)", "correct": "8p^8t^4w^2√(2k)", "choices": ["8p^8t^4w^2√(2k*2)", "16p^8t^4w^2√(2k)", "4wp^3√(8kw^2p^10t^8)"]}, {"prompt": "6x^3yz^4√(200x^2y^2z^3)", "correct": "60x^4y^2z^5√(2z)", "choices": ["120x^4y^2z^5√(2z)", "6x^3yz^4√(200x^2y^2z^3)", "60x^4y^2z^5√(2z*2)"]}], "LOCKS": [{"name": "Lock A", "type": "code4", "indices": [0, 1, 2, 3], "target": "3206"}, {"name": "Lock B", "type": "code4", "indices": [4, 5, 6, 7], "target": "4084"}, {"name": "Lock C", "type": "code4", "indices": [8, 9, 10, 11], "target": "3339"}, {"name": "Lock D", "type": "code4", "indices": [12, 13, 14, 15], "target": "4280"}], "INFO": {"title": "Escape Room — Simplifying Square Roots", "rule": "For each lock, answer all 4 questions correctly. Your 4-digit code is the LAST DIGIT of the absolute value of the coefficient OUTSIDE the radical for each simplified answer (in order). Example: answers 3√(5), -14√(2), √(3), 12√(7) → code 3412."}};
+
+  const $ = s=>document.querySelector(s);
+  const el = id=>document.getElementById(id);
+  const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+
+  // Sounds
+  const snd = (()=>{
+    let ctx; const safe = fn=>{ try{ fn(); }catch(e){} };
+    function beep(type="sine", freq=880, dur=0.12, vol=0.06){
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext||function(){})();
+      if(typeof ctx === 'function') return;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = vol;
+      o.connect(g); g.connect(ctx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur); o.stop(ctx.currentTime + dur);
+    }
+    return {
+      correct(){ safe(()=>{beep("triangle",880,.11,.06); setTimeout(()=>beep("triangle",1320,.12,.05),90)}); },
+      wrong(){ safe(()=>beep("sawtooth",180,.18,.06)); },
+      open(){ safe(()=>{beep("triangle",660,.1,.06); setTimeout(()=>beep("triangle",990,.1,.06),100); setTimeout(()=>beep("triangle",1320,.12,.06),200)}); },
+      end(){ safe(()=>beep("square",660,.22,.06)); }
+    };
+  })();
+
+  // Render math (^exp)
+  function m(txt){
+    return String(txt).replace(/\^(\-?\d+)/g, (_,e)=>`<sup>${e}</sup>`);
+  }
+  function coeffLastDigit(ansRaw){
+    const m = String(ansRaw).match(/^\s*([+-]?\d+)/);
+    if(!m) return '1'; // implicit 1
+    const n = Math.abs(parseInt(m[1],10));
+    const s = String(n);
+    return s[s.length-1];
+  }
+
+  const S = {
+    start: el('screen-start'),
+    game: el('screen-game'),
+    done: el('screen-done'),
+    player: el('player'),
+    shuffle: el('shuffle'),
+    who: el('who'),
+    count: el('count'),
+    tries: el('tries'),
+    locks: el('locks'),
+    panel: el('panel'),
+    lname: el('lname'),
+    grid: el('grid'),
+    digits: el('digits'),
+    tryOpen: el('tryOpen'),
+    msg: el('msg'),
+    finName: el('finName'),
+    finTries: el('finTries'),
+  };
+
+  let tries = 0;
+  let opened = [false,false,false,false];
+  let currentLock = 0;
+  let answers = {}; // lockIndex -> {qid->choice}
+
+  el('start').addEventListener('click', ()=>{
+    S.start.style.display='none'; S.game.style.display='block';
+    S.who.textContent = S.player.value || 'Player';
+    renderLocks();
+    openLock(0);
+  });
+
+  el('again').addEventListener('click', ()=>location.reload());
+
+  function renderLocks(){
+    S.locks.innerHTML = '';
+    DATA.LOCKS.forEach((L, idx)=>{
+      const card = document.createElement('div');
+      card.className = 'lock' + (opened[idx]?' open':'');
+      card.innerHTML = `
+        <div class="name">${L.name}</div>
+        <div class="badge ${opened[idx]?'ok':''}">${opened[idx]?'Opened':'Locked'}</div>
+        <div class="note">Target: 4 digits</div>`;
+      card.addEventListener('click', ()=> openLock(idx));
+      S.locks.appendChild(card);
+    });
+    S.count.textContent = opened.filter(Boolean).length;
+  }
+
+  function buildDigitsView(code){
+    S.digits.innerHTML = '';
+    code.split('').forEach(d=>{
+      const span = document.createElement('div');
+      span.className = 'digit';
+      span.textContent = d;
+      S.digits.appendChild(span);
+    });
+  }
+
+  function openLock(idx){
+    currentLock = idx;
+    const L = DATA.LOCKS[idx];
+    S.panel.style.display = 'block';
+    S.lname.textContent = `${L.name} — answer all 4`;
+    S.grid.innerHTML = '';
+    S.msg.textContent = '';
+    const qids = L.indices;
+    const show = qids.map(id => Object.assign({id}, DATA.BANK[id]));
+    show.forEach((q,k)=>{
+      const card = document.createElement('div'); card.className='q';
+      const opts = (S.shuffle.checked ? shuffle([q.correct, ...q.choices]) : [q.correct, ...q.choices]).slice(0,4);
+      const content = `
+        <div class="prompt math">${m(q.prompt)}</div>
+        <div class="choices"></div>`;
+      card.innerHTML = content;
+      const choicesDiv = card.querySelector('.choices');
+      opts.forEach(opt=>{
+        const b = document.createElement('button');
+        b.className = 'choice'; b.dataset.raw = opt; b.innerHTML = m(opt);
+        b.addEventListener('click', ()=> pick(b, q, opt));
+        choicesDiv.appendChild(b);
+      });
+      S.grid.appendChild(card);
+    });
+    updateDigits();
+    S.tryOpen.disabled = true;
+  }
+
+  function pick(btn, q, opt){
+    const correct = (opt === q.correct);
+    btn.classList.remove('wrong','correct');
+    if(correct){ btn.classList.add('correct'); snd.correct(); }
+    else { btn.classList.add('wrong'); snd.wrong(); }
+
+    if(correct){
+      [...btn.parentElement.children].forEach(el=>{ el.disabled = true; if(el!==btn) el.classList.add('wrong'); });
+      answers[currentLock] = answers[currentLock] || {};
+      answers[currentLock][q.id] = opt;
+      updateDigits();
+      checkReady();
+    }else{
+      tries += 1; S.tries.textContent = String(tries);
+    }
+  }
+
+  function updateDigits(){
+    const L = DATA.LOCKS[currentLock];
+    const code = L.indices.map(id => {
+      const chosen = answers[currentLock] && answers[currentLock][id];
+      return chosen ? coeffLastDigit(chosen) : '•';
+    }).join('');
+    buildDigitsView(code);
+  }
+
+  function checkReady(){
+    const L = DATA.LOCKS[currentLock];
+    const haveAll = L.indices.every(id => answers[currentLock] && answers[currentLock][id]);
+    S.tryOpen.disabled = !haveAll;
+  }
+
+  S.tryOpen.addEventListener('click', ()=>{
+    const L = DATA.LOCKS[currentLock];
+    const code = L.indices.map(id => coeffLastDigit(answers[currentLock][id])).join('');
+    if(code === L.target){
+      opened[currentLock] = true;
+      renderLocks();
+      S.msg.textContent = "Unlocked!";
+      S.msg.classList.add('ok');
+      snd.open();
+      const next = opened.indexOf(false);
+      if(next === -1){
+        S.game.style.display = 'none'; S.done.style.display = 'block'; snd.end();
+        el('finName').textContent = S.player.value || 'Player';
+        el('finTries').textContent = String(tries);
+      }else{
+        openLock(next);
+      }
+    }else{
+      tries += 1; S.tries.textContent = String(tries);
+      S.msg.textContent = "Wrong code — keep checking.";
+      S.msg.classList.remove('ok');
+      snd.wrong();
+    }
+  });
+
+  function download(data, name, type){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data],{type}));
+    a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+  function exportCSV(){
+    const rows = [["Player","Attempts","Locks Opened","Lock","Code Entered","Correct Code"]];
+    DATA.LOCKS.forEach((L, idx)=>{
+      const code = (answers[idx]? L.indices.map(id => coeffLastDigit(answers[idx][id]||'1')).join('') : "");
+      rows.push([S.player.value||"Player", tries, opened.filter(Boolean).length, L.name, code, L.target]);
+    });
+    const csv = rows.map(r=>r.map(v=>String(v).includes(',')?`"${String(v).replace(/"/g,'""')}"`:v).join(',')).join('\n');
+    download(csv, `escape_roots_results_${Date.now()}.csv`, "text/csv");
+  }
+  function exportJSON(){
+    const payload = {
+      player: S.player.value || "Player",
+      attempts: tries,
+      opened: opened,
+      locks: DATA.LOCKS.map((L,idx)=>({ name:L.name, entered: (answers[idx]? L.indices.map(id => coeffLastDigit(answers[idx][id]||'1')).join('') : null), target: L.target }))
+    };
+    download(JSON.stringify(payload,null,2), `escape_roots_results_${Date.now()}.json`, "application/json");
+  }
+  document.getElementById('csv').addEventListener('click', exportCSV);
+  document.getElementById('json').addEventListener('click', exportJSON);
+})();
+</script>
+</body>
+</html>

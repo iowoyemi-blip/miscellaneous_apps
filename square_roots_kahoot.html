@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Square Roots Challenge — Classroom (60s Locked)</title>
+<style>
+  :root{ --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#7c3aed; --good:#16a34a; --bad:#dc2626; --warn:#f59e0b; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(135deg,#0b1226,#0e1630 40%,#0d1b2a);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:900px;margin:auto;padding:24px}
+  .card{background:rgba(17,24,39,.85);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px;box-shadow:0 10px 25px rgba(0,0,0,.35)}
+  h1{font-size:clamp(24px,3.2vw,34px);margin:0 0 8px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .row>label{flex:1 1 220px;display:flex;flex-direction:column;gap:6px}
+  input{background:#0b1020;color:var(--ink);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;font-size:16px;outline:none}
+  .btn{cursor:pointer;border:0;border-radius:12px;padding:12px 18px;font-weight:700;letter-spacing:.3px}
+  .btn.primary{background:var(--accent);color:white}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px}
+  .choice{display:flex;align-items:center;justify-content:center;text-align:center;background:#0c1328;border:1px solid rgba(255,255,255,.08);color:var(--ink);border-radius:14px;min-height:72px;padding:12px;font-weight:700;cursor:pointer;transition:.15s transform,.15s box-shadow,.15s background}
+  .choice:hover{transform:translateY(-2px);box-shadow:0 10px 15px rgba(0,0,0,.25)}
+  .choice.correct{background:rgba(22,163,74,.18);border-color:rgba(22,163,74,.45)}
+  .choice.wrong{background:rgba(220,38,38,.18);border-color:rgba(220,38,38,.45)}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 10px}
+  .timer{height:10px;background:#0a1022;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .bar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);transition:width .2s linear}
+  .pill{font-weight:800;padding:6px 10px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:var(--muted)}
+  .math{font-size:clamp(18px,2.6vw,28px);font-weight:800;text-align:center;margin:12px 0}
+  .qnum{color:var(--muted);font-weight:700}
+  .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  .lead{font-size:18px}
+  sup{font-size:.6em}
+  .note{font-size:13px;color:var(--muted);margin-top:10px}
+  .lock{display:inline-block;padding:6px 10px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:#eab308;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="screen-start" class="card">
+    <h1>Square Roots Challenge</h1>
+    <p class="sub">Kahoot!-style practice — 60 seconds per question, locked.</p>
+    <div class="row">
+      <label>Player name
+        <input id="player" placeholder="e.g., Jordan A." autocomplete="off">
+      </label>
+      <label>Timer
+        <div class="lock">60 seconds per question (locked)</div>
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label style="flex:0 1 220px"><input id="shuffle" type="checkbox" checked> Shuffle questions</label>
+      <label style="flex:0 1 220px"><input id="shuffleChoices" type="checkbox" checked> Shuffle answer choices</label>
+      <label style="flex:0 1 220px"><input id="streaks" type="checkbox" checked> Streak bonus</label>
+    </div>
+    <div class="note" id="diag"></div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" id="start">Start Game</button>
+    </div>
+  </div>
+
+  <div id="screen-game" class="card" style="display:none">
+    <div class="hud">
+      <div><span class="qnum" id="qnum">Q1/16</span></div>
+      <div class="pill">Score: <span id="score">0</span></div>
+      <div class="pill">Streak: <span id="streak">0</span></div>
+    </div>
+    <div class="timer"><div class="bar" id="bar" style="width:100%"></div></div>
+    <div class="math" id="prompt">…</div>
+    <div class="grid" id="choices"></div>
+    <div class="footer">
+      <button class="btn ghost" id="skip">Skip</button>
+      <button class="btn primary" id="next" disabled>Next</button>
+    </div>
+  </div>
+
+  <div id="screen-done" class="card" style="display:none">
+    <h1>Results</h1>
+    <p class="lead">Great work, <span id="who"></span>! You got <b><span id="right"></span>/<span id="total"></span></b> correct.</p>
+    <p class="sub">Final score: <b><span id="final"></span></b></p>
+    <div class="list" id="review"></div>
+    <div class="footer" style="margin-top:18px">
+      <button class="btn success" id="csv">Export CSV</button>
+      <button class="btn warn" id="json">Export JSON</button>
+      <button class="btn ghost" id="again">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  window.addEventListener('DOMContentLoaded', init);
+  function init(){
+    const $ = s=>document.querySelector(s);
+    const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+    const FIXED_SECS = 60;
+
+    const BANK = [{"prompt": "√27", "correct": "3·√(3)", "choices": ["3·√(6)", "3·√(9)", "6·√(3)"]}, {"prompt": "√20", "correct": "2·√(5)", "choices": ["2·√(10)", "2·√(15)", "√(20)"]}, {"prompt": "√200", "correct": "10·√(2)", "choices": ["10·√(4)", "10·√(6)", "5·√(8)"]}, {"prompt": "3·√28", "correct": "6·√(7)", "choices": ["6·√(14)", "6·√(21)", "3·√(28)"]}, {"prompt": "2·√12", "correct": "4·√(3)", "choices": ["4·√(6)", "4·√(9)", "2·√(12)"]}, {"prompt": "-2·√50", "correct": "-10·√(2)", "choices": ["-10·√(4)", "-10·√(6)", "-5·√(8)"]}, {"prompt": "-3·√72", "correct": "-18·√(2)", "choices": ["-18·√(4)", "-18·√(6)", "-9·√(8)"]}, {"prompt": "√(32·x^3)", "correct": "4·x·√(2·x)", "choices": ["4·x·√(4·x)", "4·√(2·x)", "2·x·√(8·x)"]}, {"prompt": "√(18·x·m^5)", "correct": "3·m^2·√(2·m·x)", "choices": ["3·m^2·√(4·m·x)", "3·m·√(2·m·x)", "6·m^2·√(2·m·x)"]}, {"prompt": "√(45·x^2·y^7)", "correct": "3·x·y^3·√(5·y)", "choices": ["3·x·y^3·√(10·y)", "3·y^3·√(5·x·y)", "6·x·y^3·√(5·y)"]}, {"prompt": "√(27·a^3·y^2·z^6)", "correct": "3·a·y·z^3·√(3·a)", "choices": ["3·a·y·z^3·√(6·a)", "3·y·z^3·√(3·a)", "6·a·y·z^3·√(3·a)"]}, {"prompt": "-3·√(18·z)", "correct": "-9·√(2·z)", "choices": ["-9·√(4·z)", "-18·√(2·z)", "Not this one"]}, {"prompt": "-2·d·e·√(28·d^4·e^9)", "correct": "-4·d^3·e^5·√(7·e)", "choices": ["-4·d^3·e^5·√(14·e)", "-4·d^2·e^5·√(7·d·e)", "-2·d^3·e^5·√(28·e)"]}, {"prompt": "3·f^2·g^3·√(48·g·f^2)", "correct": "12·f^3·g^3·√(3·g)", "choices": ["12·f^3·g^3·√(6·g)", "12·f^2·g^3·√(3·f·g)", "6·f^3·g^3·√(12·g)"]}, {"prompt": "4·w·p^3·√(8·k·w^2·p^10·t^8)", "correct": "8·p^8·t^4·w^2·√(2·k)", "choices": ["8·p^8·t^4·w^2·√(4·k)", "4·p^8·t^4·w^2·√(8·k)", "Not this one"]}, {"prompt": "6·x^3·y·z^4·√(200·x^2·y^2·z^3)", "correct": "60·x^4·y^2·z^5·√(2·z)", "choices": ["60·x^4·y^2·z^5·√(4·z)", "60·x^3·y^2·z^5·√(2·x·z)", "30·x^4·y^2·z^5·√(8·z)"]}];
+
+    const S = {
+      start: $("#screen-start"),
+      game:  $("#screen-game"),
+      done:  $("#screen-done"),
+      player: $("#player"),
+      shuffle: $("#shuffle"),
+      shuffleChoices: $("#shuffleChoices"),
+      streaks: $("#streaks"),
+      startBtn: $("#start"),
+      qnum: $("#qnum"),
+      score: $("#score"),
+      streak: $("#streak"),
+      bar: $("#bar"),
+      prompt: $("#prompt"),
+      choices: $("#choices"),
+      next: $("#next"),
+      skip: $("#skip"),
+      who: $("#who"),
+      right: $("#right"),
+      total: $("#total"),
+      final: $("#final"),
+      review: $("#review"),
+      diag: $("#diag"),
+      csv: $("#csv"),
+      json: $("#json"),
+      again: $("#again"),
+    };
+
+    let Q=[], i=0, score=0, streak=0, secs=FIXED_SECS, shuf=true, shufC=true, streakOn=true;
+    let tLeft=0, tId=null, locked=false, history=[];
+
+    function renderMath(txt){
+      // quick ^ -> <sup>
+      let s = txt.replace(/\^(\-?\d+)/g, (_,exp)=>`<sup>${exp}</sup>`);
+      s = s.replace(/\^(\d+)/g, (_,exp)=>`<sup>${exp}</sup>`);
+      return s;
+    }
+
+    function buildQs(){
+      const base = BANK.map((q,idx)=>{
+        const all = [q.correct, ...q.choices];
+        const opts = (shufC?shuffle(all):all).slice(0,4);
+        return { idx: idx+1, prompt:q.prompt, correct:q.correct, opts, choice:null, ok:null, ms:0, gained:0 };
+      });
+      Q = (shuf? shuffle(base) : base);
+    }
+
+    function startGame(){
+      secs = FIXED_SECS; shuf = S.shuffle.checked; shufC = S.shuffleChoices.checked; streakOn = S.streaks.checked;
+      buildQs(); i=0; score=0; streak=0; history=[];
+      S.score.textContent = score; S.streak.textContent = streak;
+      S.start.style.display="none"; S.done.style.display="none"; S.game.style.display="block";
+      nextQuestion();
+    }
+
+    function renderQuestion(q){
+      S.qnum.textContent = `Q${i+1}/${Q.length}`;
+      S.prompt.innerHTML = renderMath(q.prompt);
+      S.choices.innerHTML = "";
+      S.next.disabled = true; S.skip.disabled = false; locked = false;
+      q.renderStart = performance.now();
+      q.opts.forEach(opt=>{
+        const b = document.createElement("button");
+        b.className = "choice";
+        b.dataset.raw = opt;
+        b.innerHTML = renderMath(opt);
+        b.addEventListener("click", ()=> pick(b, q, opt));
+        S.choices.appendChild(b);
+      });
+      clearInterval(tId);
+      tLeft = secs; S.bar.style.width="100%";
+      tId = setInterval(()=>{
+        tLeft -= .1;
+        const pct = Math.max(0, tLeft / secs) * 100;
+        S.bar.style.width = pct + "%";
+        if(tLeft <= 0){ clearInterval(tId); lockQuestion(null, q, false); }
+      }, 100);
+    }
+
+    function pick(btn, q, opt){
+      if(locked) return;
+      const correct = (opt === q.correct);
+      q.choice = opt;
+      lockQuestion(btn, q, correct);
+    }
+
+    function lockQuestion(btn, q, correct){
+      locked = true; clearInterval(tId);
+      const ms = Math.max(0, (performance.now() - q.renderStart)|0); q.ms = ms;
+      let gained = 0;
+      if (correct){
+        const timeBonus = Math.max(0, Math.floor(800 * (tLeft/Math.max(1,secs))));
+        const base = 200;
+        streak = (streakOn ? streak+1 : 0);
+        const streakBonus = (streakOn ? Math.min(300, (streak-1)*60) : 0);
+        gained = base + timeBonus + streakBonus;
+        score += gained; q.ok = true; q.gained = gained;
+      }else{
+        if(streakOn) streak = 0; q.ok = false; q.gained = 0;
+      }
+      [...S.choices.children].forEach(el=>{
+        const isC = el.dataset.raw === q.correct;
+        if(isC) el.classList.add("correct");
+        if(el===btn && !q.ok) el.classList.add("wrong");
+        el.disabled = true;
+      });
+      S.score.textContent = score; S.streak.textContent = streak;
+      S.next.disabled = false; S.skip.disabled = true;
+      history.push(q);
+    }
+
+    function nextQuestion(){ if(i >= Q.length){ finish(); } else { renderQuestion(Q[i++]); } }
+
+    function finish(){
+      S.game.style.display="none"; S.done.style.display="block";
+      S.who.textContent = S.player.value || "Player";
+      const right = history.filter(h=>h.ok).length;
+      S.right.textContent = right; S.total.textContent = Q.length; S.final.textContent = score;
+      S.review.innerHTML = history.map((h,k)=>`
+        <div class="item">
+          <div><b>Q${k+1}.</b> <span class="${h.ok?'good':'bad'}">${h.ok?'Correct':'Wrong'}</span></div>
+          <div>Prompt: <span class="math">${renderMath(h.prompt)}</span></div>
+          <div>Your answer: <span class="math">${h.choice?renderMath(h.choice):'<i>No answer</i>'}</span></div>
+          <div>Correct answer: <span class="math">${renderMath(h.correct)}</span></div>
+          <div>Points: <b>${h.gained}</b> — Time: ${(h.ms/1000).toFixed(1)}s</div>
+        </div>
+      `).join("");
+    }
+
+    function download(data, name, type){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data],{type}));
+      a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    }
+    function exportCSV(){
+      const rows = [["Player","Seconds","Question #","Prompt","Your Answer","Correct Answer","Correct?","Points","Time (s)","Final Score"]];
+      history.forEach((h,idx)=>{ rows.push([S.player.value||"Player", secs, idx+1, h.prompt, h.choice||"", h.correct, h.ok?"TRUE":"FALSE", h.gained, (h.ms/1000).toFixed(2), score]); });
+      const csv = rows.map(r=>r.map(v=>String(v).includes(',')?`"${String(v).replace(/"/g,'""')}"`:v).join(',')).join('\n');
+      download(csv, `square_roots_results_${Date.now()}.csv`, "text/csv");
+    }
+    function exportJSON(){
+      const payload = { player:S.player.value||"Player", seconds:secs, score,
+        results: history.map((h,idx)=>({ number:idx+1, prompt:h.prompt, answer:h.choice||null, correct:h.correct, ok:!!h.ok, points:h.gained, time_sec:+(h.ms/1000).toFixed(2) })) };
+      download(JSON.stringify(payload,null,2), `square_roots_results_${Date.now()}.json`, "application/json");
+    }
+
+    S.startBtn.addEventListener("click", startGame);
+    S.next.addEventListener("click", nextQuestion);
+    S.skip.addEventListener("click", ()=>lockQuestion(null, Q[i-1], false));
+    S.again.addEventListener("click", ()=>{ S.done.style.display="none"; S.start.style.display="block"; });
+    document.getElementById("csv").addEventListener("click", exportCSV);
+    document.getElementById("json").addEventListener("click", exportJSON);
+
+    S.diag.textContent = `Ready: ${BANK.length} questions loaded. Timer locked at ${FIXED_SECS}s.`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!-- teacher_key.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teacher Key · Inequality + Interval Notation</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#0b1526; --muted:#4a5b74; --accent:#1f7aff;
+    --soft:#f4f7ff; --line:#dfe7fb;
+  }
+  html,body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif;background:var(--soft);color:var(--ink);margin:0}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:16px 20px}
+  header h1{margin:0;font-size:22px}
+  main{max-width:1000px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:16px;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+  th{background:#f8fbff}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#0f1725;color:#dbe8ff;border-radius:6px;padding:2px 6px}
+  .roomTitle{font-size:18px;margin:0 0 10px 0}
+  .note{color:var(--muted);font-size:14px}
+  .pill{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px;color:#3a4e6b}
+  .rule{background:#eef4ff;border-left:4px solid var(--accent);padding:8px;border-radius:8px;margin:8px 0}
+  .small{font-size:13px;color:#334}
+  ul{margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Teacher Key · Escape Room: One-Variable Inequalities (Inequality + Interval)</h1>
+  <div class="note">This key regenerates the same problems as the student game using fixed seeds per room/puzzle.</div>
+</header>
+<main>
+  <section class="card">
+    <div class="roomTitle">Global settings</div>
+    <ul class="small">
+      <li><b>Teacher PIN:</b> 2025 (change in the game file near the top).</li>
+      <li><b>Rooms:</b> 8 &nbsp; <b>Puzzles per room:</b> 4</li>
+      <li><b>Student input:</b> Step 1 — inequality solution in <span class="kbd">x ? k</span> or <span class="kbd">L ? x ? U</span> form. Step 2 — interval notation using <span class="kbd">inf</span> / <span class="kbd">-inf</span> for infinity. <b>Infinity must always use parentheses, never brackets.</b></li>
+      <li><b>Code rule (all rooms):</b> ones digit of the <b>right-most finite bound</b> in the final inequality; for two-sided, use the <b>upper bound</b>. Fractions/decimals use the whole-number part (floor).</li>
+      <li><b>Tries per stage:</b> 3. After the 3rd miss, we briefly show the correct answer for that stage and auto-regenerate a parallel version.</li>
+      <li><b>Export CSV columns:</b> timestamp, room, puzzle, category, promptId, student_solution_ineq, ineq_ok, attempts_ineq, student_interval, interval_ok, attempts_interval, code_digit.</li>
+    </ul>
+    <div class="rule"><b>How to change PIN, colors, or code rule:</b>
+      Open <span class="kbd">escape_room.html</span> and edit:
+      <ul>
+        <li><b>PIN:</b> change <span class="kbd">const TEACHER_PIN = 2025;</span></li>
+        <li><b>Colors:</b> tweak <span class="kbd">:root</span> CSS variables.</li>
+        <li><b>Code rule:</b> edit function <span class="kbd">digitFromSolutionString</span> and the instruction text near the top.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="keyArea"></section>
+</main>
+
+<script>
+/*** Helpers mirrored from the game ***/
+function LCG(seed){ let s=BigInt(seed); const a=1664525n,c=1013904223n,m=2n**32n; return ()=>{ s=(a*s+c)%m; return Number(s)/2**32; }; }
+function seeded(seed){ const r=LCG(seed); return {int:(min,max)=>Math.floor(r()*(max-min+1))+min, pick:a=>a[Math.floor(r()*a.length)], sign:()=>r()<.5?-1:1};}
+function asIneq(l,op,r){ return `${l} ${op} ${r}`; }
+function signed(n){ return n>=0? `+ ${n}` : `- ${Math.abs(n)}`; }
+function splitIneq(str){ const s=str.trim().replace(/≤/g,"<=").replace(/≥/g,">="); const re=/(<=|>=|<|>)/g; let parts=[],ops=[],m,last=0; while((m=re.exec(s))){ops.push(m[1]); parts.push(s.slice(last,m.index).trim()); last=m.index+m[1].length;} parts.push(s.slice(last).trim()); return ops.length===1?{type:"binary",lhs:parts[0],op:ops[0],rhs:parts[1]}:{type:"compound",left:parts[0],op1:ops[0],middle:parts[1],op2:ops[1],right:parts[2]}; }
+function safeEvalExpr(expr, x){ const fn=Function("x","return ("+expr+");"); return fn(x); }
+function toOnesDigit(v){ if (!isFinite(v)) return 0; const n = Math.floor(Math.abs(v)); return n%10; }
+function digitFromSolutionString(solStr){
+  const obj = splitIneq(solStr);
+  if (obj.type==="binary"){
+    let k; if (/^x$/.test(obj.lhs)) k=safeEvalExpr(obj.rhs,0); else if (/^x$/.test(obj.rhs)) k=safeEvalExpr(obj.lhs,0); else k=0;
+    return toOnesDigit(k);
+  } else {
+    let kExpr = obj.right; if (/[x]/.test(kExpr)) kExpr=obj.middle; if (/[x]/.test(kExpr)) kExpr=obj.left;
+    const k = safeEvalExpr(kExpr,0); return toOnesDigit(k);
+  }
+}
+function solutionToInterval(solStr){
+  const obj = splitIneq(solStr);
+  if (!obj) return null;
+  function makeInterval(a, leftOpen, leftInf, b, rightOpen, rightInf){
+    return {a, leftOpen, leftInf, b, rightOpen, rightInf};
+  }
+  function val(expr){ try{ return safeEvalExpr(expr, 0); }catch(e){ return NaN; } }
+  if (obj.type==="binary"){
+    const Lx=/^x$/.test(obj.lhs), Rx=/^x$/.test(obj.rhs);
+    if (Lx){
+      const k=val(obj.rhs);
+      if (obj.op==="<=") return makeInterval(-Infinity,true,true,k,false,false);
+      if (obj.op==="<")  return makeInterval(-Infinity,true,true,k,true,false);
+      if (obj.op===">=") return makeInterval(k,false,false,Infinity,true,true);
+      if (obj.op===">")  return makeInterval(k,true,false,Infinity,true,true);
+    } else if (Rx){
+      const k=val(obj.lhs);
+      if (obj.op===">=") return makeInterval(-Infinity,true,true,k,false,false);
+      if (obj.op===">")  return makeInterval(-Infinity,true,true,k,true,false);
+      if (obj.op==="<=") return makeInterval(k,false,false,Infinity,true,true);
+      if (obj.op==="<")  return makeInterval(k,true,false,Infinity,true,true);
+    }
+  } else {
+    const a=val(obj.left), b=val(obj.right);
+    const leftOpen=(obj.op1==="<"), rightOpen=(obj.op2==="<");
+    return {a, leftOpen, leftInf:false, b, rightOpen, rightInf:false};
+  }
+  return null;
+}
+function intervalToString(I){
+  const l = I.leftInf? "-inf" : prettynum(I.a);
+  const r = I.rightInf? "inf" : prettynum(I.b);
+  const L = I.leftInf? "(" : (I.leftOpen? "(" : "[");
+  const R = I.rightInf? ")" : (I.rightOpen? ")" : "]");
+  return `${L}${l}, ${r}${R}`;
+}
+function prettynum(n){ if (!isFinite(n)) return n>0?"inf":"-inf"; if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n)); return String(Number(n.toFixed(6))); }
+
+/*** Categories (labels only) ***/
+const Categories = [
+  "1-Step (Add/Subtract)",
+  "1-Step (Multiply/Divide)",
+  "2-Step (ax+b ? c)",
+  "2-Step with Negative Coefficient",
+  "Distributive Property",
+  "Variables on Both Sides",
+  "Fractional Coefficients",
+  "Compound Inequalities"
+];
+
+/*** Generators (mirror of the game) ***/
+function genC1(seed){const rnd=seeded(seed); const a=rnd.int(2,15)*rnd.sign(); const b=rnd.int(-15,25); const op=rnd.pick(["<=",">=","<",">"]); const plus=rnd.pick([true,false]); const prompt= plus? `x ${(a>=0?"+":"-")} ${Math.abs(a)} ${op} ${b}` : `x - ${Math.abs(a)} ${op} ${b}`; const solutionVal= plus? b-a : b+Math.abs(a); const solution=asIneq("x",op,solutionVal); return {category:Categories[0],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C1"};}
+function genC2(seed){const rnd=seeded(seed); const k=rnd.pick([2,3,4,5,6,7,8,9])*rnd.sign(); const m=rnd.int(-12,12); const op=rnd.pick(["<=",">=","<",">"]); const b=k*m; const prompt=asIneq(`${k}x`,op,b); const flip=k<0?{"<=":">=",">=":"<=","<":">",">":"<"}[op]:op; const solution=asIneq("x",flip,m); return {category:Categories[1],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C2"};}
+function genC3(seed){const rnd=seeded(seed); const a=rnd.pick([2,3,4,5,6,7,8,9]); const m=rnd.int(-12,12); const b=rnd.int(-12,12); const cFrom=a*m+b; const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`${a}x ${b>=0?"+":"-"} ${Math.abs(b)}`,op,cFrom); const solution=asIneq("x",op,m); return {category:Categories[2],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C3"};}
+function genC4(seed){const rnd=seeded(seed); const a=rnd.pick([2,3,4,5,6,7,8,9]); const m=rnd.int(-12,12); const b=rnd.int(-12,12); const c=b-a*m; const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`${-a}x ${b>=0?"+":"-"} ${Math.abs(b)}`,op,c); const flip={"<=":">=",">=":"<=","<":">",">":"<"}[op]; const solution=asIneq("x",flip,m); return {category:Categories[3],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C4"};}
+function genC5(seed){const rnd=seeded(seed); const p=rnd.pick([2,3,4,5,6]); const r=rnd.int(-6,6); const m=rnd.int(-12,12); const form=rnd.pick(["x + r","x - r"]); const op=rnd.pick(["<=",">=","<",">"]); const inner=form==="x + r"? `x ${r>=0?"+":"-"} ${Math.abs(r)}`:`x - ${Math.abs(r)}`; const s=p*(m+(form==="x + r"? r : -Math.abs(r))); const prompt=asIneq(`${p}(${inner})`,op,s); const solution=asIneq("x",op,m); return {category:Categories[4],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C5"};}
+function genC6_pos(seed){const rnd=seeded(seed); const c=rnd.pick([0,1,2,3,4]); const a=c+rnd.pick([2,3,4,5,6,7,8]); const m=rnd.int(-10,10); const b=rnd.int(-8,8); const d=(a-c)*m+b; const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`${a}x ${b>=0?"+":"-"} ${Math.abs(b)}`,op,`${c}x ${d>=0?"+":"-"} ${Math.abs(d)}`); const solution=asIneq("x",op,m); return {category:Categories[5],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C6a"};}
+function genC6_neg(seed){const rnd=seeded(seed); const a=rnd.pick([0,1,2,3,4]); const c=a+rnd.pick([2,3,4,5,6,7,8]); const m=rnd.int(-10,10); const b=rnd.int(-8,8); const d=(a-c)*m+b; const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`${a}x ${b>=0?"+":"-"} ${Math.abs(b)}`,op,`${c}x ${d>=0?"+":"-"} ${Math.abs(d)}`); const flip={"<=":">=",">=":"<=","<":">",">":"<"}[op]; const solution=asIneq("x",flip,m); return {category:Categories[5],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C6b"};}
+function genC7a(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); const b=rnd.int(-6,6); const c=rnd.int(-6,6); const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`x/${n} ${b>=0?"+":"-"} ${Math.abs(b)}`,op,c); const m=n*(c-b); const solution=asIneq("x",op,m); return {category:Categories[6],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C7a"};}
+function genC7b(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); const b=rnd.int(-6,6); const c=rnd.int(-6,6); const op=rnd.pick(["<=",">=","<",">"]); const prompt=asIneq(`-x/${n} ${b>=0?"+":"-"} ${Math.abs(b)}`,op,c); const m=n*(b-c); const flip={"<=":">=",">=":"<=","<":">",">":"<"}[op]; const solution=asIneq("x",flip,m); return {category:Categories[6],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C7b"};}
+function genC7c(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); const r=rnd.int(-6,6); const op=rnd.pick(["<=",">=","<",">"]); const m=rnd.int(-10,10); const s=m+r; const prompt=asIneq(`(x ${r>=0?"+":"-"} ${Math.abs(r)})/${n}`,op,s); const bound=n*s + r; const solution=asIneq("x",op,bound); return {category:Categories[6],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C7c"};}
+function genC7d(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); const q=rnd.int(-6,6); const op=rnd.pick(["<=",">=","<",">"]); const m=rnd.int(-8,8); const prompt=asIneq(`(${q} - x)/${n}`,op,m); const flip={"<=":">=",">=":"<=","<":">",">":"<"}[op]; const bound=q - n*m; const solution=asIneq("x",flip,bound); return {category:Categories[6],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C7d"};}
+function genC8a(seed){const rnd=seeded(seed); let L=rnd.int(-10,3),U=rnd.int(L+3,L+12); const r=rnd.int(-5,5); const op1=rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]); const prompt=`${L} ${op1} x ${r>=0?"+":"-"} ${Math.abs(r)} ${op2} ${U}`; const solL=L+r, solU=U+r; const solution=`${solL} ${op1} x ${op2} ${solU}`; return {category:Categories[7],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C8a"};}
+function genC8b(seed){const rnd=seeded(seed); const k=rnd.pick([2,3,4,5]); let L=rnd.int(-10,2),U=rnd.int(L+3,L+12); const b=rnd.int(-6,6); const op1=rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]); const prompt=`${L} ${op1} ${k}x ${b>=0?"+":"-"} ${Math.abs(b)} ${op2} ${U}`; const solL=(L-b)/k,solU=(U-b)/k; const solution=`${solL} ${op1} x ${op2} ${solU}`; return {category:Categories[7],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C8b"};}
+function genC8c(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); let L=rnd.int(-8,2),U=rnd.int(L+2,L+10); const t=rnd.int(-5,5); const op1=rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]); const prompt=`${L} ${op1} (x ${t>=0?"+":"-"} ${Math.abs(t)})/${n} ${op2} ${U}`; const solL=L*n + t, solU=U*n + t; const solution=`${solL} ${op1} x ${op2} ${solU}`; return {category:Categories[7],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C8c"};}
+function genC8d(seed){const rnd=seeded(seed); const n=rnd.pick([2,3,4,5,6]); let L=rnd.int(-8,1),U=rnd.int(L+3,L+12); const q=rnd.int(-6,6); const op1=rnd.pick(["<","<="]); const op2=rnd.pick(["<","<="]); const prompt=`${L} ${op1} (${q} - x)/${n} ${op2} ${U}`; const mapFlip=s=>s==="<" ? ">" : s===">" ? "<" : s===">=" ? "<=" : ">="; const leftOp=mapFlip(op2), rightOp=mapFlip(op1); const solLo=q - n*U, solHi=q - n*L; const solution=`${solLo} ${leftOp} x ${rightOp} ${solHi}`; return {category:Categories[7],prompt:`Solve: ${prompt}`,promptIneq:prompt,solutionStr:solution,gid:"C8d"};}
+const ROOM_REGISTRY = [
+  [genC1, genC1, genC1, genC1],
+  [genC2, genC2, genC2, genC2],
+  [genC3, genC3, genC3, genC3],
+  [genC4, genC4, genC4, genC4],
+  [genC5, genC5, genC5, genC5],
+  [genC6_pos, genC6_neg, genC6_pos, genC6_neg],
+  [genC7a, genC7b, genC7c, genC7d],
+  [genC8a, genC8b, genC8c, genC8d],
+];
+function baseSeed(roomIndex, puzzleIndex, version=0){ return 1000 + roomIndex*100 + puzzleIndex*10 + version; }
+
+/*** BUILD KEY ***/
+function buildKey(){
+  const container=document.getElementById("keyArea");
+  container.innerHTML="";
+  for(let r=0;r<8;r++){
+    const card=document.createElement("section"); card.className="card";
+    const title=document.createElement("div"); title.className="roomTitle"; title.textContent=`Room ${r+1}: ${Categories[r]}`; card.appendChild(title);
+
+    const rule=document.createElement("div"); rule.className="rule"; rule.innerHTML="<b>Code rule:</b> ones digit of the right-hand finite bound (upper bound for two-sided)."; card.appendChild(rule);
+
+    const table=document.createElement("table");
+    table.innerHTML=`<thead><tr>
+      <th style="width:8ch">Puzzle</th>
+      <th>Category</th>
+      <th>Prompt</th>
+      <th>Inequality Solution</th>
+      <th>Interval Solution</th>
+      <th>Digit</th>
+    </tr></thead><tbody></tbody>`;
+    const tb=table.querySelector("tbody");
+    let code="";
+    for(let p=0;p<4;p++){
+      const seed=baseSeed(r,p,0);
+      const gen=ROOM_REGISTRY[r][p];
+      const G=gen(seed);
+      const I=solutionToInterval(G.solutionStr);
+      const digit=digitFromSolutionString(G.solutionStr);
+      code += String(digit);
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p+1}</td>
+        <td>${G.category}</td>
+        <td><span class="kbd">${G.prompt}</span></td>
+        <td><span class="kbd">${G.solutionStr}</span></td>
+        <td><span class="kbd">${intervalToString(I)}</span></td>
+        <td><span class="pill">${digit}</span></td>
+      `;
+      tb.appendChild(tr);
+    }
+    const foot=document.createElement("div"); foot.className="note"; foot.innerHTML=`Room ${r+1} door code: <b>${code}</b>`;
+    card.appendChild(table); card.appendChild(foot); container.appendChild(card);
+  }
+}
+buildKey();
+</script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radical Expressions Jeopardy</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- KaTeX for LaTeX Math Rendering (FIXED) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvMSlOCGbM3Nj" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlVjOTmhdwCROPdSo4QPfnMLErHyOKtvB4MPgJcA1wBSAnkoQsEGTlwOIBR" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .jeopardy-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            padding: 8px;
+        }
+        .category-header {
+            background-color: #0d3b66; /* Deep Blue */
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 12px;
+            height: 100px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .question-card {
+            background-color: #2a628f; /* Lighter Blue */
+            color: #ffc300; /* Gold */
+            font-weight: 900;
+            font-size: 2.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            height: 100px;
+        }
+        .question-card:hover {
+            transform: scale(1.05);
+            background-color: #3a7ab8;
+        }
+        .question-card.answered {
+            background-color: #1e293b;
+            color: #475569;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .question-card.answered::before {
+            content: '';
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 4px solid #0d3b66;
+        }
+        #question-display {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Make sure KaTeX renders at a good size */
+        .katex { font-size: 1.5em; }
+        .explanation-text {
+            text-align: left;
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: #334155;
+            line-height: 1.6;
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #2a628f;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Radical Expressions Jeopardy</h1>
+            <p class="text-gray-600 mt-2">A review game for Algebra I</p>
+        </header>
+        
+        <!-- Controls -->
+        <div class="text-center mb-4">
+             <button id="reset-game" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                Reset Game
+            </button>
+        </div>
+
+        <!-- Jeopardy Board -->
+        <main id="game-board" class="jeopardy-board bg-gray-900 p-2 rounded-xl shadow-2xl"></main>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="question-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 id="modal-category" class="text-2xl font-bold text-gray-800 mb-2">Category</h3>
+            <p class="text-lg text-gray-500 mb-6">Simplify the following expression:</p>
+            <div id="question-display"></div>
+            
+            <!-- Action Buttons & Feedback -->
+            <div id="interaction-zone" class="mt-6">
+                <button id="reveal-answer-btn" class="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-colors">Reveal Answer</button>
+                
+                <div id="answer-container" class="hidden mt-4 text-center">
+                    <h4 class="font-bold text-xl text-gray-800">Answer:</h4>
+                    <div id="correct-answer-display" class="mt-2 text-2xl font-bold text-blue-700"></div>
+                    <div id="explanation-display" class="explanation-text"></div>
+                    <button id="close-modal-btn" class="mt-6 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const renderMathInElement = (elem) => {
+                if (window.renderMathInElement) {
+                    window.renderMathInElement(elem, {
+                        delimiters: [
+                            {left: "$$", right: "$$", display: true},
+                            {left: "$", right: "$", display: false},
+                            {left: "\\(", right: "\\)", display: false},
+                            {left: "\\[", right: "\\]", display: true}
+                        ]
+                    });
+                }
+            };
+
+            // --- GAME DATA WITH EXPLANATIONS ---
+            const gameData = {
+                categories: [
+                    { name: "Simplifying<br>(Numbers)", questions: [
+                        { points: 100, question: "\\sqrt{48}", answer: "4\\sqrt{3}", explanation: "1. Find the largest perfect square that divides 48. That's 16. <br> 2. Rewrite the radical: $\\sqrt{48} = \\sqrt{16 \\cdot 3}$ <br> 3. Separate the radicals: $\\sqrt{16} \\cdot \\sqrt{3}$ <br> 4. Simplify: $4\\sqrt{3}$" },
+                        { points: 200, question: "\\sqrt{72}", answer: "6\\sqrt{2}", explanation: "1. The largest perfect square factor of 72 is 36. <br> 2. $\\sqrt{72} = \\sqrt{36 \\cdot 2}$ <br> 3. $\\sqrt{36} \\cdot \\sqrt{2} = 6\\sqrt{2}$" },
+                        { points: 300, question: "\\sqrt{150}", answer: "5\\sqrt{6}", explanation: "1. The largest perfect square factor of 150 is 25. <br> 2. $\\sqrt{150} = \\sqrt{25 \\cdot 6}$ <br> 3. $\\sqrt{25} \\cdot \\sqrt{6} = 5\\sqrt{6}$" },
+                        { points: 400, question: "3\\sqrt{80}", answer: "12\\sqrt{5}", explanation: "1. Simplify the radical first: $\\sqrt{80} = \\sqrt{16 \\cdot 5} = 4\\sqrt{5}$. <br> 2. Multiply by the coefficient outside: $3 \\cdot 4\\sqrt{5} = 12\\sqrt{5}$" },
+                        { points: 500, question: "\\sqrt{242}", answer: "11\\sqrt{2}", explanation: "1. The largest perfect square factor of 242 is 121. <br> 2. $\\sqrt{242} = \\sqrt{121 \\cdot 2}$ <br> 3. $\\sqrt{121} \\cdot \\sqrt{2} = 11\\sqrt{2}$" }
+                    ]},
+                    { name: "Simplifying<br>(Variables)", questions: [
+                        { points: 100, question: "\\sqrt{x^4}", answer: "x^2", explanation: "To take the square root of a variable with an even exponent, divide the exponent by 2. $4 \\div 2 = 2$. So, $\\sqrt{x^4} = x^2$." },
+                        { points: 200, question: "\\sqrt{y^7}", answer: "y^3\\sqrt{y}", explanation: "1. Break the variable into the largest even power and a remainder: $y^7 = y^6 \\cdot y^1$. <br> 2. $\\sqrt{y^7} = \\sqrt{y^6 \\cdot y}$ <br> 3. $\\sqrt{y^6} \\cdot \\sqrt{y} = y^3\\sqrt{y}$" },
+                        { points: 300, question: "\\sqrt{12a^6}", answer: "2a^3\\sqrt{3}", explanation: "1. Simplify number: $\\sqrt{12} = \\sqrt{4 \\cdot 3} = 2\\sqrt{3}$. <br> 2. Simplify variable: $\\sqrt{a^6} = a^3$. <br> 3. Combine the parts: $2a^3\\sqrt{3}$." },
+                        { points: 400, question: "\\sqrt{50b^9c^2}", answer: "5b^4c\\sqrt{2b}", explanation: "1. Numbers: $\\sqrt{50} = \\sqrt{25 \\cdot 2} = 5\\sqrt{2}$. <br> 2. Variables: $\\sqrt{b^9} = \\sqrt{b^8 \\cdot b} = b^4\\sqrt{b}$. And $\\sqrt{c^2}=c$. <br> 3. Combine parts outside and inside the radical: $5b^4c\\sqrt{2b}$." },
+                        { points: 500, question: "\\sqrt{98m^{11}n^5}", answer: "7m^5n^2\\sqrt{2mn}", explanation: "1. Numbers: $\\sqrt{98} = \\sqrt{49 \\cdot 2} = 7\\sqrt{2}$. <br> 2. Variables: $\\sqrt{m^{11}} = m^5\\sqrt{m}$ and $\\sqrt{n^5} = n^2\\sqrt{n}$. <br> 3. Combine: $7m^5n^2\\sqrt{2mn}$." }
+                    ]},
+                    { name: "Adding<br>Radicals", questions: [
+                        { points: 100, question: "2\\sqrt{3} + 5\\sqrt{3}", answer: "7\\sqrt{3}", explanation: "The terms have like radicals ($\\sqrt{3}$). Add their coefficients: $(2+5)\\sqrt{3} = 7\\sqrt{3}$." },
+                        { points: 200, question: "8\\sqrt{5} + \\sqrt{20}", answer: "10\\sqrt{5}", explanation: "1. Simplify $\\sqrt{20} = \\sqrt{4 \\cdot 5} = 2\\sqrt{5}$. <br> 2. The expression becomes $8\\sqrt{5} + 2\\sqrt{5}$. <br> 3. Add coefficients: $(8+2)\\sqrt{5} = 10\\sqrt{5}$." },
+                        { points: 300, question: "3\\sqrt{2} + 4\\sqrt{8}", answer: "11\\sqrt{2}", explanation: "1. Simplify $4\\sqrt{8} = 4\\sqrt{4 \\cdot 2} = 4 \\cdot 2\\sqrt{2} = 8\\sqrt{2}$. <br> 2. The expression is now $3\\sqrt{2} + 8\\sqrt{2}$. <br> 3. Add coefficients: $(3+8)\\sqrt{2} = 11\\sqrt{2}$." },
+                        { points: 400, question: "\\sqrt{12} + \\sqrt{27} + 2\\sqrt{3}", answer: "7\\sqrt{3}", explanation: "1. Simplify all terms to a common radical. <br> $\\sqrt{12} = 2\\sqrt{3}$. <br> $\\sqrt{27} = 3\\sqrt{3}$. <br> 2. The expression is $2\\sqrt{3} + 3\\sqrt{3} + 2\\sqrt{3}$. <br> 3. Add: $(2+3+2)\\sqrt{3} = 7\\sqrt{3}$." },
+                        { points: 500, question: "2\\sqrt{50} + 3\\sqrt{18}", answer: "19\\sqrt{2}", explanation: "1. Simplify terms. <br> $2\\sqrt{50} = 2\\sqrt{25 \\cdot 2} = 2 \\cdot 5\\sqrt{2} = 10\\sqrt{2}$. <br> $3\\sqrt{18} = 3\\sqrt{9 \\cdot 2} = 3 \\cdot 3\\sqrt{2} = 9\\sqrt{2}$. <br> 2. Add: $10\\sqrt{2} + 9\\sqrt{2} = 19\\sqrt{2}$." }
+                    ]},
+                    { name: "Subtracting<br>Radicals", questions: [
+                        { points: 100, question: "10\\sqrt{7} - 4\\sqrt{7}", answer: "6\\sqrt{7}", explanation: "The terms have like radicals. Subtract their coefficients: $(10-4)\\sqrt{7} = 6\\sqrt{7}$." },
+                        { points: 200, question: "5\\sqrt{6} - \\sqrt{24}", answer: "3\\sqrt{6}", explanation: "1. Simplify $\\sqrt{24} = \\sqrt{4 \\cdot 6} = 2\\sqrt{6}$. <br> 2. The expression becomes $5\\sqrt{6} - 2\\sqrt{6}$. <br> 3. Subtract: $(5-2)\\sqrt{6} = 3\\sqrt{6}$." },
+                        { points: 300, question: "2\\sqrt{45} - \\sqrt{20}", answer: "4\\sqrt{5}", explanation: "1. Simplify terms. <br> $2\\sqrt{45} = 2\\sqrt{9 \\cdot 5} = 2 \\cdot 3\\sqrt{5} = 6\\sqrt{5}$. <br> $\\sqrt{20} = \\sqrt{4 \\cdot 5} = 2\\sqrt{5}$. <br> 2. Subtract: $6\\sqrt{5} - 2\\sqrt{5} = 4\\sqrt{5}$." },
+                        { points: 400, question: "7\\sqrt{40} - 2\\sqrt{90}", answer: "8\\sqrt{10}", explanation: "1. Simplify terms. <br> $7\\sqrt{40} = 7\\sqrt{4 \\cdot 10} = 7 \\cdot 2\\sqrt{10} = 14\\sqrt{10}$. <br> $2\\sqrt{90} = 2\\sqrt{9 \\cdot 10} = 2 \\cdot 3\\sqrt{10} = 6\\sqrt{10}$. <br> 2. Subtract: $14\\sqrt{10} - 6\\sqrt{10} = 8\\sqrt{10}$." },
+                        { points: 500, question: "3\\sqrt{98} - \\sqrt{72}", answer: "15\\sqrt{2}", explanation: "1. Simplify terms. <br> $3\\sqrt{98} = 3\\sqrt{49 \\cdot 2} = 3 \\cdot 7\\sqrt{2} = 21\\sqrt{2}$. <br> $\\sqrt{72} = \\sqrt{36 \\cdot 2} = 6\\sqrt{2}$. <br> 2. Subtract: $21\\sqrt{2} - 6\\sqrt{2} = 15\\sqrt{2}$." }
+                    ]},
+                    { name: "Multiplying<br>Radicals", questions: [
+                        { points: 100, question: "\\sqrt{5} \\cdot \\sqrt{10}", answer: "5\\sqrt{2}", explanation: "1. Multiply under the radical: $\\sqrt{5 \\cdot 10} = \\sqrt{50}$. <br> 2. Simplify: $\\sqrt{50} = \\sqrt{25 \\cdot 2} = 5\\sqrt{2}$." },
+                        { points: 200, question: "(2\\sqrt{3})^2", answer: "12", explanation: "1. Square both parts of the term: $2^2 \\cdot (\\sqrt{3})^2$. <br> 2. Simplify: $4 \\cdot 3 = 12$." },
+                        { points: 300, question: "3\\sqrt{2} \\cdot 4\\sqrt{6}", answer: "24\\sqrt{3}", explanation: "1. Multiply coefficients: $3 \\cdot 4 = 12$. <br> 2. Multiply radicals: $\\sqrt{2} \\cdot \\sqrt{6} = \\sqrt{12}$. <br> 3. Combine and simplify: $12\\sqrt{12} = 12\\sqrt{4 \\cdot 3} = 12 \\cdot 2\\sqrt{3} = 24\\sqrt{3}$." },
+                        { points: 400, question: "\\sqrt{3}(2\\sqrt{6} - 5\\sqrt{3})", answer: "6\\sqrt{2} - 15", explanation: "1. Distribute $\\sqrt{3}$: $(\\sqrt{3} \\cdot 2\\sqrt{6}) - (\\sqrt{3} \\cdot 5\\sqrt{3})$. <br> 2. Simplify each term: $2\\sqrt{18} - 5\\sqrt{9}$. <br> 3. $2(3\\sqrt{2}) - 5(3) = 6\\sqrt{2} - 15$." },
+                        { points: 500, question: "(2\\sqrt{5} + \\sqrt{3})(\\sqrt{5} - \\sqrt{3})", answer: "7 - \\sqrt{15}", explanation: "1. Use FOIL. <br> First: $2\\sqrt{5} \\cdot \\sqrt{5} = 2 \\cdot 5 = 10$. <br> Outer: $2\\sqrt{5} \\cdot -\\sqrt{3} = -2\\sqrt{15}$. <br> Inner: $\\sqrt{3} \\cdot \\sqrt{5} = \\sqrt{15}$. <br> Last: $\\sqrt{3} \\cdot -\\sqrt{3} = -3$. <br> 2. Combine: $10 - 2\\sqrt{15} + \\sqrt{15} - 3$. <br> 3. $7 - \\sqrt{15}$." }
+                    ]},
+                    { name: "Dividing<br>Radicals", questions: [
+                        { points: 100, question: "\\frac{\\sqrt{32}}{\\sqrt{2}}", answer: "4", explanation: "1. Combine into one radical: $\\sqrt{\\frac{32}{2}}$. <br> 2. Simplify the fraction: $\\sqrt{16}$. <br> 3. Result: $4$." },
+                        { points: 200, question: "\\frac{6}{\\sqrt{3}}", answer: "2\\sqrt{3}", explanation: "1. Rationalize the denominator by multiplying top and bottom by $\\sqrt{3}$. <br> 2. $\\frac{6}{\\sqrt{3}} \\cdot \\frac{\\sqrt{3}}{\\sqrt{3}} = \\frac{6\\sqrt{3}}{3}$. <br> 3. Simplify the fraction: $2\\sqrt{3}$." },
+                        { points: 300, question: "\\sqrt{\\frac{7}{9}}", answer: "\\frac{\\sqrt{7}}{3}", explanation: "1. Apply the square root to the numerator and denominator separately: $\\frac{\\sqrt{7}}{\\sqrt{9}}$. <br> 2. Simplify the denominator: $\\frac{\\sqrt{7}}{3}$." },
+                        { points: 400, question: "\\frac{\\sqrt{15}}{\\sqrt{12}}", answer: "\\frac{\\sqrt{5}}{2}", explanation: "1. Simplify the denominator first: $\\sqrt{12} = 2\\sqrt{3}$. Expression is $\\frac{\\sqrt{15}}{2\\sqrt{3}}$. <br> 2. Split the numerator: $\\frac{\\sqrt{5}\\sqrt{3}}{2\\sqrt{3}}$. <br> 3. Cancel out $\\sqrt{3}$: $\\frac{\\sqrt{5}}{2}$." },
+                        { points: 500, question: "\\frac{3}{2+\\sqrt{5}}", answer: "-6+3\\sqrt{5}", explanation: "1. Multiply by the conjugate of the denominator, which is $(2-\\sqrt{5})$. <br> $\\frac{3}{2+\\sqrt{5}} \\cdot \\frac{2-\\sqrt{5}}{2-\\sqrt{5}}$. <br> 2. Numerator: $3(2-\\sqrt{5}) = 6 - 3\\sqrt{5}$. <br> 3. Denominator: $(2)^2 - (\\sqrt{5})^2 = 4 - 5 = -1$. <br> 4. Combine: $\\frac{6-3\\sqrt{5}}{-1} = -6+3\\sqrt{5}$." }
+                    ]}
+                ]
+            };
+
+            // --- DOM Elements ---
+            const gameBoard = document.getElementById('game-board');
+            const modal = document.getElementById('question-modal');
+            const modalCategory = document.getElementById('modal-category');
+            const questionDisplay = document.getElementById('question-display');
+            const revealAnswerBtn = document.getElementById('reveal-answer-btn');
+            const answerContainer = document.getElementById('answer-container');
+            const correctAnswerDisplay = document.getElementById('correct-answer-display');
+            const explanationDisplay = document.getElementById('explanation-display');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const resetGameBtn = document.getElementById('reset-game');
+
+            // --- State Variables ---
+            let activeQuestion = null;
+
+            // --- Functions ---
+            function renderBoard() {
+                gameBoard.innerHTML = '';
+                // Create category headers
+                gameData.categories.forEach(cat => {
+                    const catCell = document.createElement('div');
+                    catCell.classList.add('category-header');
+                    catCell.innerHTML = cat.name;
+                    gameBoard.appendChild(catCell);
+                });
+
+                // Create question cards
+                const numQuestions = gameData.categories[0].questions.length;
+                for (let i = 0; i < numQuestions; i++) {
+                    gameData.categories.forEach((cat, catIndex) => {
+                        const question = cat.questions[i];
+                        const card = document.createElement('div');
+                        card.classList.add('question-card');
+                        card.dataset.cat = catIndex;
+                        card.dataset.q = i;
+                        card.textContent = `$${question.points}`;
+                        card.addEventListener('click', handleCardClick);
+                        gameBoard.appendChild(card);
+                    });
+                }
+            }
+            
+            function handleCardClick(event) {
+                const card = event.currentTarget;
+                if (card.classList.contains('answered')) return;
+                
+                const catIndex = card.dataset.cat;
+                const qIndex = card.dataset.q;
+                activeQuestion = gameData.categories[catIndex].questions[qIndex];
+                activeQuestion.cardElement = card;
+
+                // Populate and show modal
+                modalCategory.innerHTML = gameData.categories[catIndex].name.replace('<br>', ' ');
+                // *** FIX: Wrap question in delimiters for KaTeX ***
+                questionDisplay.textContent = `$${activeQuestion.question}$`;
+                renderMathInElement(questionDisplay);
+                
+                modal.classList.remove('hidden');
+            }
+
+            function revealAnswer() {
+                if (!activeQuestion) return;
+
+                // *** FIX: Wrap answer in delimiters for KaTeX ***
+                correctAnswerDisplay.textContent = `$${activeQuestion.answer}$`;
+                explanationDisplay.innerHTML = activeQuestion.explanation;
+
+                // Render math in the new content
+                renderMathInElement(answerContainer);
+
+                // Show the answer container and hide the reveal button
+                answerContainer.classList.remove('hidden');
+                revealAnswerBtn.classList.add('hidden');
+            }
+
+            function closeModal() {
+                if (activeQuestion && activeQuestion.cardElement) {
+                    activeQuestion.cardElement.classList.add('answered');
+                    activeQuestion.cardElement.textContent = '';
+                }
+
+                // Hide modal and reset its state for the next question
+                modal.classList.add('hidden');
+                answerContainer.classList.add('hidden');
+                revealAnswerBtn.classList.remove('hidden');
+                
+                activeQuestion = null;
+            }
+            
+            function resetGame() {
+                renderBoard();
+            }
+
+            // --- Event Listeners ---
+            revealAnswerBtn.addEventListener('click', revealAnswer);
+            closeModalBtn.addEventListener('click', closeModal);
+            resetGameBtn.addEventListener('click', resetGame);
+            
+            // --- Initial Game Setup ---
+            renderBoard();
+        });
+    </script>
+</body>
+</html>

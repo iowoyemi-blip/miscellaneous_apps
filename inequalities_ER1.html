@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra: Solving Inequalities Quiz</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #quiz-container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+
+        #quiz-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 20px 30px;
+            text-align: center;
+        }
+        #quiz-header h1 { margin: 0; font-size: 1.8em; }
+        #progress-container { margin-top: 8px; font-size: 0.9em; opacity: 0.9; }
+
+        #quiz-main { padding: 30px; }
+
+        #question-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        #question-box p {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #0f172a;
+        }
+        #question-text {
+            font-family: monospace;
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #334155;
+            margin-top: 10px;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            font-family: monospace;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #0f172a;
+        }
+        .input-group input[type="text"]:disabled {
+            background-color: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        #feedback-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        #feedback-box.hint { background-color: #fefce8; color: #854d0e; border: 1px solid #fde047; }
+        #feedback-box.solution { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        #feedback-box h4 { margin: 0 0 10px 0; }
+        #feedback-box code { background-color: #e2e8f0; padding: 2px 5px; border-radius: 4px; }
+
+        #quiz-footer {
+            padding: 20px 30px;
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        .action-btn {
+            padding: 12px 28px;
+            font-size: 1em;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: #1e293b;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-left: 10px;
+        }
+        .action-btn:hover { background-color: #334155; }
+        
+        #results-container, #review-container {
+            padding: 40px; text-align: center;
+        }
+        #results-container h2, #review-container h2 { font-size: 2.2em; color: #0f172a; }
+        #results-container p { font-size: 1.3em; }
+
+        .review-item {
+            text-align: left;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .review-question {
+            font-family: monospace;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 15px;
+        }
+        .review-solution {
+             background-color: #f1f5f9;
+             padding: 15px;
+             border-radius: 8px;
+             line-height: 1.6;
+        }
+
+        .hide { display: none; }
+    </style>
+</head>
+<body>
+    <div id="quiz-container">
+        <div id="quiz-header">
+            <h1>Solving Inequalities Practice Quiz</h1>
+            <div id="progress-container"><span id="question-counter"></span></div>
+        </div>
+
+        <div id="quiz-main">
+            <div id="question-box">
+                <p>Solve the following inequality:</p>
+                <p id="question-text"></p>
+            </div>
+            
+            <div id="part1-group" class="input-group">
+                <label for="inequality-input">Part 1: Inequality Notation</label>
+                <input type="text" id="inequality-input" autocomplete="off" placeholder="e.g., x > 5 or x < -1">
+            </div>
+
+            <div id="part2-group" class="input-group">
+                <label for="interval-input">Part 2: Interval Notation</label>
+                <input type="text" id="interval-input" autocomplete="off" placeholder="e.g., (-inf, -1) U (5, inf)">
+            </div>
+
+            <div id="feedback-box"></div>
+        </div>
+
+        <div id="results-container" class="hide">
+            <h2>Quiz Complete!</h2>
+            <p id="score-text"></p>
+            <div>
+                <button id="review-btn" class="action-btn hide">Review Missed</button>
+                <button id="restart-btn" class="action-btn">Restart Quiz</button>
+            </div>
+        </div>
+        
+        <div id="review-container" class="hide"></div>
+
+        <div id="quiz-footer">
+            <button id="check-btn" class="action-btn">Check Answer</button>
+            <button id="next-btn" class="action-btn hide">Next Question</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { question: "x + 7 &le; 12", parts: [ { name: "inequality", answers: ["x<=5", "5>=x"], hint: "To get 'x' by itself, what operation is the inverse of adding 7?" }, { name: "interval", answers: ["(-inf,5]"], hint: "The solution includes 5. Which symbol, ')' or ']', means 'inclusive'?" } ], solution: "1. <strong>Solve:</strong> Subtract 7 from both sides: <code>x + 7 - 7 &le; 12 - 7</code> gives <code>x &le; 5</code>.<br>2. <strong>Inequality:</strong> <code>x &le; 5</code><br>3. <strong>Interval:</strong> <code>(-infinity, 5]</code>" },
+            { question: "-4x < 16", parts: [ { name: "inequality", answers: ["x>-4", "-4<x"], hint: "When you divide or multiply both sides of an inequality by a negative number, what special rule must you follow?" }, { name: "interval", answers: ["(-4,inf)"], hint: "The solution does NOT include -4. Which symbol, '(' or '[', means 'exclusive'?" } ], solution: "1. <strong>Solve:</strong> Divide both sides by -4. Because you divided by a negative, you MUST flip the inequality sign: <code>-4x / -4 > 16 / -4</code> gives <code>x > -4</code>.<br>2. <strong>Inequality:</strong> <code>x > -4</code><br>3. <strong>Interval:</strong> <code>(-4, infinity)</code>" },
+            { question: "2x - 3 &ge; 7", parts: [ { name: "inequality", answers: ["x>=5", "5<=x"], hint: "This is a two-step inequality. Use the addition principle first to move the constant term." }, { name: "interval", answers: ["[5,inf)"], hint: "The solution includes 5 and goes towards positive infinity. What symbols do you use?" } ], solution: "1. <strong>Solve:</strong> Add 3 to both sides: <code>2x - 3 + 3 &ge; 7 + 3</code> &rarr; <code>2x &ge; 10</code>. Then divide by 2: <code>x &ge; 5</code>.<br>2. <strong>Inequality:</strong> <code>x &ge; 5</code><br>3. <strong>Interval:</strong> <code>[5, infinity)</code>" },
+            { question: "<sup>x</sup>&frasl;<sub>4</sub> + 5 &le; 11", parts: [ { name: "inequality", answers: ["x<=24", "24>=x"], hint: "First, move the constant term to the other side. Then, how do you undo division by 4?" }, { name: "interval", answers: ["(-inf,24]"], hint: "The solution goes towards negative infinity. Which symbol always goes with infinity?" } ], solution: "1. <strong>Solve:</strong> Subtract 5 from both sides: <code>x/4 &le; 6</code>. Then multiply both sides by 4: <code>x &le; 24</code>.<br>2. <strong>Inequality:</strong> <code>x &le; 24</code><br>3. <strong>Interval:</strong> <code>(-infinity, 24]</code>" },
+            { question: "-2x - 1 < 7", parts: [ { name: "inequality", answers: ["x>-4", "-4<x"], hint: "Add 1 to both sides first. Then, remember the rule about dividing by a negative." }, { name: "interval", answers: ["(-4,inf)"], hint: "The interval starts at -4 but doesn't include it. Which symbol do you use?" } ], solution: "1. <strong>Solve:</strong> Add 1 to both sides: <code>-2x < 8</code>. Divide by -2 and flip the sign: <code>x > -4</code>.<br>2. <strong>Inequality:</strong> <code>x > -4</code><br>3. <strong>Interval:</strong> <code>(-4, infinity)</code>" },
+            { question: "12 - <sup>3x</sup>&frasl;<sub>2</sub> &ge; 0", parts: [{ name: "inequality", answers: ["x<=8", "8>=x"], hint: "Subtract 12 from both sides first. Remember to flip the sign when you multiply or divide by a negative." }, { name: "interval", answers: ["(-inf,8]"], hint: "The solution includes 8 and goes towards negative infinity." }], solution: "1. <strong>Solve:</strong> Subtract 12: <code>-3x/2 &ge; -12</code>. Multiply by -2/3 and flip the sign: <code>x &le; (-12 * -2/3)</code> gives <code>x &le; 8</code>.<br>2. <strong>Inequality:</strong> <code>x &le; 8</code><br>3. <strong>Interval:</strong> <code>(-infinity, 8]</code>" },
+            { question: "-5x &le; 20", parts: [{ name: "inequality", answers: ["x>=-4", "-4<=x"], hint: "Remember the special rule when you divide both sides by a negative number." }, { name: "interval", answers: ["[-4,inf)"], hint: "The solution includes -4. Use the correct bracket." }], solution: "1. <strong>Solve:</strong> Divide by -5 and flip the inequality sign: <code>x &ge; -4</code>.<br>2. <strong>Inequality:</strong> <code>x &ge; -4</code><br>3. <strong>Interval:</strong> <code>[-4, infinity)</code>" },
+            { question: "-<sup>x</sup>&frasl;<sub>5</sub> < -3", parts: [{ name: "inequality", answers: ["x>15", "15<x"], hint: "Multiply both sides by -5. What happens to the inequality sign?" }, { name: "interval", answers: ["(15,inf)"], hint: "The solution does not include 15." }], solution: "1. <strong>Solve:</strong> Multiply both sides by -5 and flip the sign: <code>x > 15</code>.<br>2. <strong>Inequality:</strong> <code>x > 15</code><br>3. <strong>Interval:</strong> <code>(15, infinity)</code>" },
+            { question: "4x + 5 < 2(x + 6)", parts: [{ name: "inequality", answers: ["x<3.5", "x<7/2", "3.5>x", "7/2>x"], hint: "Use the distributive property first. Then gather the 'x' terms on one side and constants on the other." }, { name: "interval", answers: ["(-inf,3.5)", "(-inf,7/2)"], hint: "The solution goes towards negative infinity and does not include the endpoint." }], solution: "1. <strong>Solve:</strong> Distribute: <code>4x + 5 < 2x + 12</code>. Subtract 2x: <code>2x + 5 < 12</code>. Subtract 5: <code>2x < 7</code>. Divide by 2: <code>x < 3.5</code>.<br>2. <strong>Inequality:</strong> <code>x < 3.5</code><br>3. <strong>Interval:</strong> <code>(-infinity, 3.5)</code>" },
+            { question: "-2(x - 3) &ge; x + 1", parts: [{ name: "inequality", answers: ["x<=5/3", "5/3>=x"], hint: "Distribute the -2 carefully. Remember that a negative times a negative is a positive." }, { name: "interval", answers: ["(-inf,5/3]"], hint: "The solution includes the fraction 5/3." }], solution: "1. <strong>Solve:</strong> Distribute: <code>-2x + 6 &ge; x + 1</code>. Add 2x: <code>6 &ge; 3x + 1</code>. Subtract 1: <code>5 &ge; 3x</code>. Divide by 3: <code>5/3 &ge; x</code>.<br>2. <strong>Inequality:</strong> <code>x &le; 5/3</code><br>3. <strong>Interval:</strong> <code>(-infinity, 5/3]</code>" },
+            { question: "3(x + 2) &ge; 2x - 1", parts: [ { name: "inequality", answers: ["x>=-7", "-7<=x"], hint: "Start with the distributive property on the left side. Then, gather 'x' terms on one side." }, { name: "interval", answers: ["[-7,inf)"], hint: "The solution includes -7. Which bracket do you use for 'or equal to'?" } ], solution: "1. <strong>Solve:</strong> Distribute the 3: <code>3x + 6 &ge; 2x - 1</code>. Subtract 2x from both sides: <code>x + 6 &ge; -1</code>. Subtract 6 from both sides: <code>x &ge; -7</code>.<br>2. <strong>Inequality:</strong> <code>x &ge; -7</code><br>3. <strong>Interval:</strong> <code>[-7, infinity)</code>" },
+            { question: "5(x + 1) - 3 &le; 3(x - 2) + 9", parts: [ { name: "inequality", answers: ["x<=0.5", "x<=1/2", "0.5>=x", "1/2>=x"], hint: "Distribute on both sides, then combine like terms on each side before solving." }, { name: "interval", answers: ["(-inf,0.5]", "(-inf,1/2]"], hint: "The solution is a fraction or decimal. The interval still starts at -infinity and ends at that value." } ], solution: "1. <strong>Solve:</strong> Distribute: <code>5x + 5 - 3 &le; 3x - 6 + 9</code>. Simplify: <code>5x + 2 &le; 3x + 3</code>. Subtract 3x: <code>2x + 2 &le; 3</code>. Subtract 2: <code>2x &le; 1</code>. Divide by 2: <code>x &le; 0.5</code>.<br>2. <strong>Inequality:</strong> <code>x &le; 0.5</code><br>3. <strong>Interval:</strong> <code>(-infinity, 0.5]</code>" },
+            { question: "1 < x - 2 &le; 6", parts: [ { name: "inequality", answers: ["3<x<=8", "8>=x>3"], hint: "To isolate 'x', whatever you do to the middle part, you must also do to the left and right parts." }, { name: "interval", answers: ["(3,8]"], hint: "One end of the interval is open, and the other is closed. Match the symbols correctly." } ], solution: "1. <strong>Solve:</strong> This is a compound inequality. Add 2 to all three parts: <code>1 + 2 < x - 2 + 2 &le; 6 + 2</code> gives <code>3 < x &le; 8</code>.<br>2. <strong>Inequality:</strong> <code>3 < x &le; 8</code><br>3. <strong>Interval:</strong> <code>(3, 8]</code>" },
+            { question: "-4 &le; 2x + 1 < 10", parts: [{ name: "inequality", answers: ["-2.5<=x<4.5", "-5/2<=x<9/2"], hint: "Start by subtracting 1 from all three parts of the inequality." }, { name: "interval", answers: ["[-2.5,4.5)", "[-5/2,9/2)"], hint: "The left endpoint is included, but the right endpoint is not." }], solution: "1. <strong>Solve:</strong> Subtract 1 from all parts: <code>-5 &le; 2x < 9</code>. Divide all parts by 2: <code>-2.5 &le; x < 4.5</code>.<br>2. <strong>Inequality:</strong> <code>-2.5 &le; x < 4.5</code><br>3. <strong>Interval:</strong> <code>[-2.5, 4.5)</code>" },
+            { question: "0 &le; <sup>x</sup>&frasl;<sub>2</sub> - 3 < 4", parts: [{ name: "inequality", answers: ["6<=x<14", "14>x>=6"], hint: "Start by adding 3 to all three parts of the inequality." }, { name: "interval", answers: ["[6,14)"], hint: "The solution is between two numbers. One is included, one is not." }], solution: "1. <strong>Solve:</strong> Add 3 to all parts: <code>3 &le; x/2 < 7</code>. Multiply all parts by 2: <code>6 &le; x < 14</code>.<br>2. <strong>Inequality:</strong> <code>6 &le; x < 14</code><br>3. <strong>Interval:</strong> <code>[6, 14)</code>" },
+            { question: "-6 &le; 3x - 2 < 4", parts: [ { name: "inequality", answers: ["-4/3<=x<2", "2>x>=-4/3"], hint: "Start by adding 2 to all three parts of the inequality." }, { name: "interval", answers: ["[-4/3,2)"], hint: "The left number is a fraction and is included. The right number is not included. Use the correct symbols." } ], solution: "1. <strong>Solve:</strong> Add 2 to all three parts: <code>-4 &le; 3x < 6</code>. Divide all three parts by 3: <code>-4/3 &le; x < 2</code>.<br>2. <strong>Inequality:</strong> <code>-4/3 &le; x < 2</code><br>3. <strong>Interval:</strong> <code>[-4/3, 2)</code>" },
+            { question: "2 < <sup>(x - 1)</sup>&frasl;<sub>3</sub> &le; 5", parts: [{ name: "inequality", answers: ["7<x<=16", "16>=x>7"], hint: "Clear the fraction first by multiplying all three parts by 3." }, { name: "interval", answers: ["(7,16]"], hint: "The left endpoint is exclusive, and the right endpoint is inclusive." }], solution: "1. <strong>Solve:</strong> Multiply all parts by 3: <code>6 < x - 1 &le; 15</code>. Add 1 to all parts: <code>7 < x &le; 16</code>.<br>2. <strong>Inequality:</strong> <code>7 < x &le; 16</code><br>3. <strong>Interval:</strong> <code>(7, 16]</code>" },
+            { question: "-9 < -2x + 1 &le; -3", parts: [{ name: "inequality", answers: ["2<=x<5", "5>x>=2"], hint: "After you subtract 1, you will divide by a negative. Remember to flip BOTH inequality signs." }, { name: "interval", answers: ["[2,5)"], hint: "After flipping the signs, the smaller number goes on the left. Be careful with the brackets." }], solution: "1. <strong>Solve:</strong> Subtract 1: <code>-10 < -2x &le; -4</code>. Divide by -2 and flip both signs: <code>5 > x &ge; 2</code>, which is the same as <code>2 &le; x < 5</code>.<br>2. <strong>Inequality:</strong> <code>2 &le; x < 5</code><br>3. <strong>Interval:</strong> <code>[2, 5)</code>" },
+            { question: "3 < 4x - 7 &le; 11", parts: [{ name: "inequality", answers: ["2.5<x<=4.5", "5/2<x<=9/2"], hint: "Start by adding 7 to all three parts of the inequality." }, { name: "interval", answers: ["(2.5,4.5]", "(5/2,9/2]"], hint: "Both endpoints can be written as decimals or fractions." }], solution: "1. <strong>Solve:</strong> Add 7 to all parts: <code>10 < 4x &le; 18</code>. Divide all parts by 4: <code>2.5 < x &le; 4.5</code>.<br>2. <strong>Inequality:</strong> <code>2.5 < x &le; 4.5</code><br>3. <strong>Interval:</strong> <code>(2.5, 4.5]</code>" },
+            { question: "x + 3 < 2 OR x - 2 > 3", parts: [{ name: "inequality", answers: ["x<-1orx>5", "x>5orx<-1"], hint: "Solve each inequality separately. The final answer will have two parts connected by 'OR'." }, { name: "interval", answers: ["(-inf,-1)u(5,inf)"], hint: "A disjunction ('OR') results in two separate intervals joined by the union symbol 'U'." }], solution: "1. <strong>Solve:</strong> For the first part, subtract 3: <code>x < -1</code>. For the second, add 2: <code>x > 5</code>.<br>2. <strong>Inequality:</strong> <code>x < -1 or x > 5</code><br>3. <strong>Interval:</strong> <code>(-infinity, -1) U (5, infinity)</code>" },
+            { question: "2x > 6 OR x + 5 < 3", parts: [{ name: "inequality", answers: ["x>3orx<-2", "x<-2orx>3"], hint: "Solve the simple one-step and two-step inequalities on their own first." }, { name: "interval", answers: ["(-inf,-2)u(3,inf)"], hint: "Remember to write the interval with the smaller numbers on the left." }], solution: "1. <strong>Solve:</strong> For the first part, divide by 2: <code>x > 3</code>. For the second, subtract 5: <code>x < -2</code>.<br>2. <strong>Inequality:</strong> <code>x < -2 or x > 3</code><br>3. <strong>Interval:</strong> <code>(-infinity, -2) U (3, infinity)</code>" },
+            { question: "3x - 1 < -10 OR 2x + 5 > 11", parts: [{ name: "inequality", answers: ["x<-3orx>3", "x>3orx<-3"], hint: "These are both two-step inequalities. Isolate 'x' in each one." }, { name: "interval", answers: ["(-inf,-3)u(3,inf)"], hint: "This is another union of two separate intervals." }], solution: "1. <strong>Solve:</strong> First part: <code>3x < -9</code> &rarr; <code>x < -3</code>. Second part: <code>2x > 6</code> &rarr; <code>x > 3</code>.<br>2. <strong>Inequality:</strong> <code>x < -3 or x > 3</code><br>3. <strong>Interval:</strong> <code>(-infinity, -3) U (3, infinity)</code>" },
+            { question: "-2x > 8 OR 3x - 1 > 8", parts: [{ name: "inequality", answers: ["x<-4orx>3", "x>3orx<-4"], hint: "Be very careful with the first inequality. What happens when you divide by a negative number?" }, { name: "interval", answers: ["(-inf,-4)u(3,inf)"], hint: "The union symbol 'U' connects the two pieces of your solution set." }], solution: "1. <strong>Solve:</strong> First part: divide by -2 and flip sign &rarr; <code>x < -4</code>. Second part: <code>3x > 9</code> &rarr; <code>x > 3</code>.<br>2. <strong>Inequality:</strong> <code>x < -4 or x > 3</code><br>3. <strong>Interval:</strong> <code>(-infinity, -4) U (3, infinity)</code>" }
+        ];
+
+        const questionTextEl = document.getElementById('question-text');
+        const questionCounterEl = document.getElementById('question-counter');
+        const inequalityInput = document.getElementById('inequality-input');
+        const intervalInput = document.getElementById('interval-input');
+        const feedbackBox = document.getElementById('feedback-box');
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const quizMain = document.getElementById('quiz-main');
+        const resultsContainer = document.getElementById('results-container');
+        const reviewContainer = document.getElementById('review-container');
+        const scoreText = document.getElementById('score-text');
+        const restartBtn = document.getElementById('restart-btn');
+        const reviewBtn = document.getElementById('review-btn');
+
+        let currentQuestionIndex = 0;
+        let currentPartIndex = 0;
+        let attempts = 0;
+        let score = 0;
+        let missedQuestionsData = [];
+
+        function normalizeAnswer(str) {
+            return str.replace(/\s+/g, '').toLowerCase().replace(/infinity/g, 'inf').replace(/or/g, 'u');
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            missedQuestionsData = [];
+            quizMain.classList.remove('hide');
+            resultsContainer.classList.add('hide');
+            reviewContainer.classList.add('hide');
+            reviewContainer.innerHTML = '';
+            nextBtn.classList.add('hide');
+            checkBtn.classList.remove('hide');
+            quizFooter.classList.remove('hide');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            currentPartIndex = 0;
+            attempts = 0;
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionTextEl.innerHTML = currentQuestion.question;
+            questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+            
+            inequalityInput.value = '';
+            intervalInput.value = '';
+            
+            inequalityInput.disabled = false;
+            intervalInput.disabled = true;
+            
+            feedbackBox.style.display = 'none';
+            checkBtn.classList.remove('hide');
+            nextBtn.classList.add('hide');
+        }
+
+        function checkAnswer() {
+            const currentQuestion = quizData[currentQuestionIndex];
+            const currentPart = currentQuestion.parts[currentPartIndex];
+            const userInput = (currentPart.name === 'inequality') ? inequalityInput.value : intervalInput.value;
+            const normalizedUserInput = normalizeAnswer(userInput);
+            
+            const isCorrect = currentPart.answers.some(ans => normalizeAnswer(ans) === normalizedUserInput);
+            
+            attempts++;
+
+            if (isCorrect) {
+                if (currentPart.name === 'inequality') {
+                    inequalityInput.disabled = true;
+                    intervalInput.disabled = false;
+                    intervalInput.focus();
+                    currentPartIndex = 1;
+                    attempts = 0;
+                    feedbackBox.style.display = 'none';
+                } else {
+                    intervalInput.disabled = true;
+                    score++;
+                    showSolution(true); // true indicates it was a correct answer
+                }
+            } else {
+                if (attempts === 1) {
+                    feedbackBox.className = 'hint';
+                    feedbackBox.innerHTML = `<h4>Not quite, give it another try!</h4> <p>${currentPart.hint}</p>`;
+                    feedbackBox.style.display = 'block';
+                } else {
+                    // Record missed question before showing solution
+                    if (missedQuestionsData.findIndex(item => item.question === currentQuestion.question) === -1) {
+                         missedQuestionsData.push(currentQuestion);
+                    }
+                    showSolution(false);
+                }
+            }
+        }
+
+        function showSolution(isCorrect) {
+            const currentQuestion = quizData[currentQuestionIndex];
+            feedbackBox.className = isCorrect ? 'solution' : 'hint'; // Use hint style for incorrect to draw attention
+            feedbackBox.innerHTML = `<h4>${isCorrect ? 'Correct!' : "Here's the full solution:"}</h4> <p>${currentQuestion.solution}</p>`;
+            feedbackBox.style.display = 'block';
+            
+            inequalityInput.disabled = true;
+            intervalInput.disabled = true;
+            checkBtn.classList.add('hide');
+            nextBtn.classList.remove('hide');
+        }
+
+        function handleNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizMain.classList.add('hide');
+            checkBtn.classList.add('hide');
+            nextBtn.classList.add('hide');
+            document.querySelector('#quiz-footer').classList.add('hide');
+
+            resultsContainer.classList.remove('hide');
+            scoreText.textContent = `You correctly solved ${score} out of ${quizData.length} problems.`;
+
+            if (missedQuestionsData.length > 0) {
+                reviewBtn.classList.remove('hide');
+            } else {
+                reviewBtn.classList.add('hide');
+            }
+        }
+
+        function displayReview() {
+            resultsContainer.classList.add('hide');
+            reviewContainer.classList.remove('hide');
+            reviewContainer.innerHTML = '<h2>Review Your Missed Questions</h2>';
+
+            missedQuestionsData.forEach(item => {
+                const questionEl = document.createElement('div');
+                questionEl.classList.add('review-item');
+                questionEl.innerHTML = `
+                    <div class="review-question">${item.question}</div>
+                    <div class="review-solution">${item.solution}</div>
+                `;
+                reviewContainer.appendChild(questionEl);
+            });
+
+            const backBtn = document.createElement('button');
+            backBtn.textContent = 'Back to Score';
+            backBtn.classList.add('action-btn');
+            backBtn.onclick = () => {
+                reviewContainer.classList.add('hide');
+                resultsContainer.classList.remove('hide');
+            };
+            reviewContainer.appendChild(backBtn);
+        }
+
+        checkBtn.addEventListener('click', checkAnswer);
+        nextBtn.addEventListener('click', handleNextQuestion);
+        restartBtn.addEventListener('click', startQuiz);
+        reviewBtn.addEventListener('click', displayReview);
+
+        const quizFooter = document.querySelector('#quiz-footer');
+
+        startQuiz();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,359 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Boss Battle — Multi‑Step Equations (Solo)</title>
+<style>
+  :root{
+    --bg:#0b1226; --ink:#e5e7eb; --muted:#9ca3af; --panel:#0f172a; --card:#111827;
+    --boss:#ef4444; --player:#22c55e; --accent:#7c3aed; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 800px at 20% -10%, #0f1840 0, #0b1226 40%, #091022 70%, #070d1a 100%); color:var(--ink); font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica}
+  .wrap{max-width:980px;margin:auto;padding:24px}
+  .card{background:rgba(17,24,39,.9);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px 24px;box-shadow:0 15px 35px rgba(0,0,0,.40);backdrop-filter:blur(6px)}
+  h1{margin:0 0 8px;font-size:clamp(24px,3vw,36px)}
+  .sub{margin:0 0 12px;color:var(--muted)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  input{background:#0b1020;color:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px;font-size:16px;outline:none}
+  .btn{cursor:pointer;border:0;border-radius:12px;padding:12px 18px;font-weight:800;letter-spacing:.3px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--ink)}
+  .hud{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;margin-bottom:10px}
+  .pill{font-weight:800;padding:6px 10px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:var(--muted)}
+  .bars{display:grid;gap:12px;margin:10px 0 14px}
+  .bar{height:18px;background:#0a0f20;border:1px solid rgba(255,255,255,.10);border-radius:999px;overflow:hidden;position:relative}
+  .bar span{position:absolute;left:8px;top:-2px;font-size:13px;color:#cbd5e1}
+  .fill{height:100%;width:100%}
+  .boss .fill{background:linear-gradient(90deg,#ef4444,#f59e0b)}
+  .player .fill{background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
+  .bossbox{background:linear-gradient(180deg,rgba(239,68,68,.12),rgba(124,58,237,.08));border:1px solid rgba(239,68,68,.35);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .bossname{font-weight:900;font-size:20px;margin-bottom:6px}
+  .bossart{font-size:56px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4))}
+  .math{font-size:clamp(20px,2.8vw,32px);font-weight:900;text-align:center;margin:6px 0 8px}
+  .inputrow{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:6px}
+  .inputrow input{min-width:160px;text-align:center;font-weight:800}
+  .log{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0a0f20;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;max-height:160px;overflow:auto;color:#cbd5e1;font-size:13px}
+  .hint{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+  .footer{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+  .big{font-size:18px}
+  sup{font-size:.6em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="screen-start" class="card">
+    <h1>Boss Battle — Multi‑Step Equations (Solo)</h1>
+    <p class="sub">Defeat the <b>Equation Titan</b> using items from your packet (#1–26). Short‑answer, instant damage, streak bonuses.</p>
+    <div class="row">
+      <label>Player name
+        <input id="player" placeholder="e.g., Jordan A." autocomplete="off">
+      </label>
+      <div class="pill">Settings locked (5:00, Boss 250 HP)</div>
+    </div>
+    <div class="hint">Type integers, simplified <b>fractions</b> (e.g., 14/3), or <b>no solution</b>/<b>infinitely many</b>. Decimals accepted for fractions.</div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" id="start">Enter the Arena</button>
+    </div>
+  </div>
+
+  <div id="screen-game" class="card" style="display:none">
+    <div class="hud">
+      <div class="pill">Boss HP: <span id="bhp">250</span></div>
+      <div class="pill">Player HP: <span id="php">100</span></div>
+      <div class="pill">Streak: <span id="streak">0</span></div>
+      <div class="pill">Time: <span id="clock">5:00</span></div>
+    </div>
+    <div class="bars">
+      <div class="bar boss"><div class="fill" id="bfill" style="width:100%"></div><span>Equation Titan</span></div>
+      <div class="bar player"><div class="fill" id="pfill" style="width:100%"></div><span>You</span></div>
+    </div>
+    <div class="arena">
+      <div class="bossbox">
+        <div class="bossname">Equation Titan</div>
+        <div class="bossart">🗿</div>
+        <div class="hint">Correct answers <b>damage the boss</b>; wrong answers <b>hurt you</b>.</div>
+      </div>
+      <div>
+        <div class="math" id="prompt">…</div>
+        <div class="inputrow">
+          <input id="answer" placeholder="x = ?" />
+          <button class="btn primary big" id="submit">Attack</button>
+          <button class="btn ghost big" id="skip">Skip</button>
+        </div>
+        <div class="hint">Examples: 4, -11, 9/5, 3.5, no solution, infinitely many solutions</div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" id="next" disabled>Next</button>
+    </div>
+  </div>
+
+  <div id="screen-done" class="card" style="display:none">
+    <h1 id="resultTitle">Battle Complete</h1>
+    <p class="sub" id="resultSub"></p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn primary" id="again">Play Again</button>
+      <button class="btn ghost" id="csv">Export CSV</button>
+      <button class="btn ghost" id="json">Export JSON</button>
+    </div>
+    <div class="hint" id="summary"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const BANK = [{"id": 1, "prompt": "2x + 3 = 11", "answer": "4"}, {"id": 2, "prompt": "5x − 7 = 18", "answer": "5"}, {"id": 3, "prompt": "4x − 2x + 1 = 9", "answer": "4"}, {"id": 4, "prompt": "6x + 3 = 3x + 15", "answer": "4"}, {"id": 5, "prompt": "2(x + 4) = 14", "answer": "3"}, {"id": 6, "prompt": "3(x − 5) = 2x + 1", "answer": "16"}, {"id": 7, "prompt": "4x + 2 = 3x + 7", "answer": "5"}, {"id": 8, "prompt": "5x − (2x − 3) = 16", "answer": "13/3"}, {"id": 9, "prompt": "3(2x − 1) = 4x + 5", "answer": "4"}, {"id": 10, "prompt": "6x − (x + 2) = 3x + 6", "answer": "4"}, {"id": 11, "prompt": "2(x + 3) − x = 5", "answer": "-1"}, {"id": 12, "prompt": "4x − 2 = 2(2x + 1)", "answer": "no solution"}, {"id": 13, "prompt": "x − 2(x − 3) = 4", "answer": "2"}, {"id": 14, "prompt": "5(x − 1) = 5x − 5", "answer": "infinitely many solutions"}, {"id": 15, "prompt": "3(x + 2) = 2(x + 4)", "answer": "2"}, {"id": 16, "prompt": "6 − (2x − 3) = 3x", "answer": "9/5"}, {"id": 17, "prompt": "4x + 5 = 2x + 9", "answer": "2"}, {"id": 18, "prompt": "3x − 2(x + 1) = 4", "answer": "6"}, {"id": 19, "prompt": "2(3x + 1) = 6x + 2", "answer": "infinitely many solutions"}, {"id": 20, "prompt": "5(x − 1) − 2x = 3(x + 2) + 1", "answer": "no solution"}, {"id": 21, "prompt": "(1/2)x + 3 = 5", "answer": "4"}, {"id": 22, "prompt": "(2/3)(x − 1) = 4/3", "answer": "3"}, {"id": 23, "prompt": "(3x)/4 + 1/2 = 4", "answer": "14/3"}, {"id": 24, "prompt": "2 − (5x)/6 = 1/3", "answer": "2"}, {"id": 25, "prompt": "(1/2)(x + 4) = (3x)/4 − 1", "answer": "12"}, {"id": 26, "prompt": "(2x − 3)/5 = (x + 1)/2", "answer": "-11"}];
+  const TOTAL_SECS = 300; // 5:00
+  const BOSS_HP_MAX = 250;
+  const PLAYER_HP_MAX = 100;
+
+  const $ = s=>document.querySelector(s);
+  const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+
+  // Sounds (web audio)
+  const snd = (()=>{
+    let ctx; const safe = fn=>{ try{ fn(); }catch(e){} };
+    function tone(type="sine", f=880, d=0.12, v=0.06){
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext||function(){})();
+      if(typeof ctx === 'function') return;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.value = f; g.gain.value = v;
+      o.connect(g); g.connect(ctx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + d); o.stop(ctx.currentTime + d);
+    }
+    return {
+      hit(){ safe(()=>{tone("triangle",860,.08,.05); setTimeout(()=>tone("triangle",1220,.10,.05),70)}); },
+      hurt(){ safe(()=>tone("sawtooth",180,.18,.07)); },
+      tick(){ safe(()=>tone("sine",880,.05,.03)); },
+      win(){ safe(()=>{tone("triangle",660,.1,.07); setTimeout(()=>tone("triangle",990,.1,.07),100); setTimeout(()=>tone("triangle",1320,.12,.07),200)}) },
+      lose(){ safe(()=>tone("square",220,.25,.08)); }
+    };
+  })();
+
+  // Confetti (no libs)
+  const CF = (()=>{
+    let cvs=null, ctx=null, parts=[], running=false, t0=0;
+    function ensureCanvas(){ if(cvs) return; cvs = document.createElement('canvas'); cvs.id='confetti'; Object.assign(cvs.style,{position:'fixed',inset:'0',pointerEvents:'none',zIndex:'9999',display:'none'}); document.body.appendChild(cvs); ctx=cvs.getContext('2d'); window.addEventListener('resize', resize); resize(); }
+    function resize(){ if(!cvs) return; const dpr=Math.max(1,window.devicePixelRatio||1); cvs.width=Math.floor(innerWidth*dpr); cvs.height=Math.floor(innerHeight*dpr); cvs.style.width=innerWidth+'px'; cvs.style.height=innerHeight+'px'; if(ctx) ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function spawn(n){ parts=[]; const w=innerWidth,h=innerHeight; for(let i=0;i<n;i++){ parts.push({x:Math.random()*w,y:-10-Math.random()*h*0.3,vx:-2+Math.random()*4,vy:2+Math.random()*3,g:0.05+Math.random()*0.02,s:6+Math.random()*6,r:Math.random()*Math.PI,vr:-0.15+Math.random()*0.3,hue:Math.floor(Math.random()*360)}); } }
+    function draw(){ if(!running) return; ctx.clearRect(0,0,innerWidth,innerHeight); for(const p of parts){ p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.r+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle = `hsl(${p.hue},90%,60%)`; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore(); if(p.y>innerHeight+40){ p.y=-20; p.vy=2+Math.random()*3; } } if(performance.now()-t0<3200){ requestAnimationFrame(draw);} else {running=false;cvs.style.display='none';} }
+    function go(){ ensureCanvas(); spawn(160); cvs.style.display='block'; running=true; t0=performance.now(); requestAnimationFrame(draw); }
+    return { go };
+  })();
+
+  // Pretty renderer (minimal, no IDs)
+  function mPretty(s){
+    let t = String(s);
+    t = t.replace(/−/g,'-');
+    t = t.replace(/\*/g,'×').replace(/x/g,'x'); // keep 'x' as variable, only '*' becomes ×
+    t = t.replace(/\//g,'/');
+    t = t.replace(/\^(-?\d+)/g, (_,e)=>`<sup>${e}</sup>`);
+    t = t.replace(/\s+/g,' ').trim();
+    return t;
+  }
+
+  // Parse input: accept integer, decimal, fraction, special phrases
+  function normalizeInput(str){
+    const s = (str||"").trim().toLowerCase();
+    if(!s) return {kind:"empty"};
+    const specials = {
+      "no solution":"nosol","no solutions":"nosol","none":"nosol","ns":"nosol","dne":"nosol",
+      "infinitely many":"inf","infinitely many solutions":"inf","infinite solutions":"inf","all real numbers":"inf","all reals":"inf","infinite":"inf"
+    };
+    if(s in specials) return {kind:specials[s]};
+    // fraction like a/b
+    if(/^[-+]?\d+\s*\/\s*[-+]?\d+$/.test(s)){
+      const [a,b] = s.split("/").map(v=>parseInt(v,10));
+      if(b===0) return {kind:"nan"};
+      // reduce
+      const g = (x,y)=>y?g(y,x%y):Math.abs(x);
+      const g0 = g(a,b)||1; const na = a/g0, nb = b/g0;
+      return {kind:"fraction", num:na, den:nb, val: na/nb };
+    }
+    // decimal or integer
+    const v = Number(s);
+    if(Number.isFinite(v)) return {kind:"number", val:v};
+    return {kind:"text", raw:s};
+  }
+  function normalizeAnswer(ans){
+    const a = (ans||"").toString().trim().toLowerCase();
+    if(a.includes("no solution")) return {kind:"nosol"};
+    if(a.includes("infinitely")) return {kind:"inf"};
+    if(/^-?\d+\/-?\d+$/.test(a)){
+      const [p,q] = a.split("/").map(x=>parseInt(x,10));
+      const g = (x,y)=>y?g(y,x%y):Math.abs(x);
+      const g0 = g(p,q)||1; const na = p/g0, nb = q/g0;
+      return {kind:"fraction", num:na, den:nb, val: na/nb };
+    }
+    const n = Number(a);
+    if(Number.isFinite(n)) return {kind:"number", val:n};
+    return {kind:"text", raw:a};
+  }
+  function eqAns(user, key){
+    if(key.kind==="nosol") return user.kind==="nosol";
+    if(key.kind==="inf") return user.kind==="inf";
+    if(key.kind==="fraction"){
+      if(user.kind==="fraction") return user.num===key.num && user.den===key.den;
+      if(user.kind==="number") return Math.abs(user.val - key.val) < 1e-9;
+      return false;
+    }
+    if(key.kind==="number"){
+      if(user.kind==="number") return Math.abs(user.val - key.val) < 1e-9;
+      if(user.kind==="fraction") return Math.abs(user.val - key.val) < 1e-9;
+      return false;
+    }
+    // fallback: string compare
+    return (user.raw||"") === (key.raw||"");
+  }
+
+  const S = {
+    start: $("#screen-start"),
+    game:  $("#screen-game"),
+    done:  $("#screen-done"),
+    startBtn: $("#start"),
+    next: $("#next"),
+    skip: $("#skip"),
+    submit: $("#submit"),
+    prompt: $("#prompt"),
+    answer: $("#answer"),
+    log: $("#log"),
+    bhp: $("#bhp"),
+    php: $("#php"),
+    bfill: $("#bfill"),
+    pfill: $("#pfill"),
+    streak: $("#streak"),
+    clock: $("#clock"),
+    again: $("#again"),
+    csv: $("#csv"),
+    json: $("#json"),
+    player: $("#player"),
+    resultTitle: $("#resultTitle"),
+    resultSub: $("#resultSub"),
+    summary: $("#summary"),
+  };
+
+  let order=[], i=0, boss=BOSS_HP_MAX, player=PLAYER_HP_MAX, tId=null, tLeft=TOTAL_SECS, streak=0, history=[], current=null;
+
+  function buildOrder(){ order = shuffle(BANK.slice()); }
+
+  function start(){
+    buildOrder(); i=0; boss=BOSS_HP_MAX; player=PLAYER_HP_MAX; streak=0; history=[];
+    tLeft=TOTAL_SECS; S.bhp.textContent=boss; S.php.textContent=player; S.streak.textContent=streak;
+    S.bfill.style.width = "100%"; S.pfill.style.width="100%"; S.start.style.display="none"; S.done.style.display="none"; S.game.style.display="block";
+    S.answer.value="";
+    tickClock();
+    tId = setInterval(()=>{ tLeft -= .1; if (Math.ceil(tLeft) <= 5 && Math.abs(tLeft - Math.round(tLeft)) < 0.06) snd.tick(); if (tLeft <= 0) { clearInterval(tId); finish(false); } tickClock(); },100);
+    nextQ();
+  }
+
+  function tickClock(){
+    const m = Math.max(0, Math.floor(tLeft/60)), s = Math.max(0, Math.floor(tLeft%60));
+    S.clock.textContent = `${m}:${s<10?'0'+s:s}`;
+  }
+
+  function nextQ(){
+    if(i>=order.length) buildOrder(), i=0;
+    current = order[i++];
+    S.prompt.innerHTML = mPretty(current.prompt);
+    S.answer.value=""; S.answer.focus();
+    S.next.disabled = true;
+  }
+
+  function damageBoss(){
+    const base = 22;
+    const bonus = Math.min(18, 4*streak);
+    const dmg = base + bonus;
+    boss = Math.max(0, boss - dmg);
+    S.bhp.textContent = boss; S.bfill.style.width = (100* boss / BOSS_HP_MAX) + "%";
+    return dmg;
+  }
+  function damagePlayer(){
+    const dmg = 18;
+    player = Math.max(0, player - dmg);
+    S.php.textContent = player; S.pfill.style.width = (100* player / PLAYER_HP_MAX) + "%";
+    return dmg;
+  }
+
+  function htmlEscape(s){ return (s||"").replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
+  function niceAns(obj){
+    if(obj.kind==="nosol") return "No solution";
+    if(obj.kind==="inf") return "Infinitely many solutions";
+    if(obj.kind==="fraction"){
+      return `${obj.num}/${obj.den}`;
+    }
+    if(obj.kind==="number"){
+      if(Math.abs(obj.val - Math.round(obj.val))<1e-9) return String(Math.round(obj.val));
+      return String(obj.val);
+    }
+    return obj.raw||"";
+  }
+
+  function submit(){
+    const raw = S.answer.value.trim();
+    if(!raw) return;
+    const user = normalizeInput(raw);
+    const key = normalizeAnswer(current.answer);
+    const ok = eqAns(user, key);
+
+    let msg = "";
+    const t = Math.round((TOTAL_SECS - tLeft)*10)/10;
+    if(ok){
+      streak += 1; const dmg = damageBoss(); snd.hit();
+      msg = `✅ ${current.prompt}  &mdash; x = <b>${niceAns(key)}</b>  — You dealt <b>${dmg}</b>! (streak ${streak})`;
+    }else{
+      const dmg = damagePlayer(); snd.hurt();
+      msg = `❌ ${current.prompt} &nbsp; | &nbsp; your answer: <b>${htmlEscape(raw)}</b> — You took <b>${dmg}</b>. Correct: <b>${niceAns(key)}</b>.`;
+      streak = 0;
+    }
+    S.streak.textContent = streak;
+    S.next.disabled = false;
+    history.push({ prompt: current.prompt, answer: niceAns(key), guess: raw, ok, t });
+    S.log.innerHTML = `<div>${msg}</div>` + S.log.innerHTML;
+
+    if(boss<=0){ clearInterval(tId); finish(true); }
+    if(player<=0){ clearInterval(tId); finish(false); }
+  }
+
+  function finish(won){
+    S.game.style.display="none"; S.done.style.display="block";
+    if(won){ S.resultTitle.textContent = "Victory!"; S.resultSub.textContent = "You defeated the Equation Titan!"; snd.win(); CF.go(); }
+    else { S.resultTitle.textContent = "Defeated"; S.resultSub.textContent = "The Equation Titan prevailed this time."; snd.lose(); }
+    const right = history.filter(h=>h.ok).length;
+    const total = history.length;
+    const acc = total? Math.round(100*right/total):0;
+    const bestStreak = (history.reduce((b,h)=>{ if(!h.ok) return b.concat(0); const last=b.pop()||0; b.push(last+1); return b; },[]).reduce((m,x)=>Math.max(m,x),0)) || 0;
+    S.summary.textContent = `Answered: ${total} | Correct: ${right} (${acc}%) | Best streak: ${bestStreak}`;
+  }
+
+  S.startBtn.addEventListener("click", start);
+  S.submit.addEventListener("click", submit);
+  S.answer.addEventListener("keydown", e=>{ if(e.key==="Enter") submit(); });
+  S.next.addEventListener("click", nextQ);
+  S.skip.addEventListener("click", nextQ);
+  S.again.addEventListener("click", ()=>location.reload());
+
+  function download(data, name, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data],{type})); a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000); }
+  $("#csv").addEventListener("click", ()=>{
+    const rows = [["Player","Seconds","Boss HP Max","Player HP Max","Outcome","Answered","Correct","Accuracy%","Best Streak","Prompt","Your Answer","Correct Answer","OK","Time(s)"]];
+    const right = history.filter(h=>h.ok).length; const acc = history.length? Math.round(100*right/history.length):0;
+    const bestStreak = (history.reduce((b,h)=>{ if(!h.ok) return b.concat(0); const last=b.pop()||0; b.push(last+1); return b; },[]).reduce((m,x)=>Math.max(m,x),0)) || 0;
+    const outcome = (boss<=0) ? "WIN" : (player<=0 ? "LOSS" : "TIME");
+    history.forEach(h=>{
+      rows.push([document.getElementById("player").value||"Player", TOTAL_SECS, BOSS_HP_MAX, PLAYER_HP_MAX, outcome, history.length, right, acc, bestStreak, h.prompt, h.guess, h.answer, h.ok?"TRUE":"FALSE", h.t]);
+    });
+    const csv = rows.map(r=>r.map(v=>String(v).includes(',')?'"'+String(v).replace(/"/g,'""')+'"':v).join(',')).join('\n');
+    download(csv, `boss_battle_multistep_${Date.now()}.csv`, "text/csv");
+  });
+  $("#json").addEventListener("click", ()=>{
+    const payload = { player:S.player.value||"Player", seconds:TOTAL_SECS, bossHpMax:BOSS_HP_MAX, playerHpMax:PLAYER_HP_MAX, outcome:(boss<=0)?"WIN":(player<=0?"LOSS":"TIME"), history };
+    download(JSON.stringify(payload,null,2), `boss_battle_multistep_${Date.now()}.json`, "application/json");
+  });
+})();
+</script>
+</body>
+</html>

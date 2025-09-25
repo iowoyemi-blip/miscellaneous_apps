@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Free-Response Quiz — Translate Word Problems → Equations (Retry & Reset)</title>
+<style>
+:root{ --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#0ea5e9; --good:#16a34a; --bad:#ef4444; --warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#0b122a,#0d1830 40%,#0d1b2a);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:980px;margin:auto;padding:24px}
+.card{background:rgba(17,24,39,.9);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:22px;box-shadow:0 10px 25px rgba(0,0,0,.35)}
+h1{font-size:clamp(22px,3vw,32px);margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 14px}
+.category{margin-top:16px;font-weight:900;color:#cbd5e1}
+.problem{background:#0b1020;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin:10px 0}
+label{font-weight:700;display:block;margin-top:6px}
+input[type="text"]{width:100%;padding:10px 12px;background:#0a0f1f;color:var(--ink);border:1px solid rgba(255,255,255,.12);border-radius:10px}
+.btn{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;font-weight:800;margin-top:8px}
+.btn.primary{background:var(--accent);color:white}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:#fff}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:#cbd5e1;font-weight:800;font-size:12px}
+.ok{color:#86efac}
+.err{color:#fecaca}
+.warn{color:#fde68a}
+.explain{background:#0c1328;border:1px dashed rgba(255,255,255,.18);border-radius:10px;padding:10px;margin-top:8px}
+hr.sep{border:0;border-top:1px solid rgba(255,255,255,.08);margin:14px 0}
+.counter{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.small{font-size:12px;color:#94a3b8}
+@media (max-width: 760px){
+  .wrap{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap card">
+  <h1 id="title">Free-Response Quiz — Translate Word Problems → Equations (Retry & Reset)</h1>
+  <p class="sub">Each problem has two parts. <b>Step 1:</b> type your equation (use <code>x</code>) and check. 
+  <b>Step 2:</b> once the equation is correct, solve for <code>x</code> and check. 
+  The app gives focused feedback for the step you're on. Answers are <i>not</i> revealed until after <b>three tries</b>; then the problem resets with a new parallel version.</p>
+  <div class="counter">
+    <span class="badge">Problems: 16 total (2 per category)</span>
+    <span class="badge" id="score">0/16 fully correct</span>
+    <button class="btn ghost" id="exportCsv">Export CSV</button>
+  </div>
+  <hr class="sep" />
+  <div id="quiz"></div>
+</div>
+<script>
+
+(function(){
+  const TITLE = "Free-Response Quiz — Translate Word Problems → Equations (Retry & Reset)";
+  const el = s=>document.querySelector(s);
+  const mk = (tag, cls, html)=>{ const x=document.createElement(tag); if(cls) x.className=cls; if(html!=null) x.innerHTML=html; return x; };
+  const choice = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+  const randint = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+  // Accept implied multiplication: 3x, 4(x+5), (x+1)(x+2), x2, etc.
+  function normalizeEquationInput(s){
+    if(s==null) return '';
+    s = String(s)
+          .replace(/[×·]/g,'*')
+          .replace(/[–−—]/g,'-')
+          .replace(/÷/g,'/')
+          .replace(/X/g,'x');
+    // Insert * where multiplication is implied
+    s = s.replace(/(\d)(x)/g, '$1*$2');   // 3x -> 3*x
+    s = s.replace(/(x)(\d)/g, '$1*$2');   // x2 -> x*2
+    s = s.replace(/(\d)\(/g, '$1*(');     // 4( -> 4*(
+    s = s.replace(/\)(\d|x)/g, ')*$1');   // )3 or )x -> )*3 / )*x
+    s = s.replace(/\)\(/g, ')*(');        // )( -> )*(
+    s = s.replace(/x\(/g, 'x*(');         // x( -> x*(
+    s = s.replace(/\s+/g,'');             // remove spaces
+    return s;
+  }
+  function parseNumber(str){
+    str = String(str).trim();
+    if(/^[-+]?\d+\/\d+$/.test(str)){
+      const [a,b]=str.split('/').map(Number); if(b===0) return NaN; return a/b;
+    }
+    const v = Number(str); return isNaN(v) ? NaN : v;
+  }
+  function sanitizeExpr(s){
+    if(!/^[\d\.\+\-\*\/\(\)x=]+$/.test(s)) return null;
+    return s;
+  }
+  function evalExpr(expr, xval){
+    try{
+      const f = new Function('x', `return (${expr});`);
+      const out = f(xval);
+      if(typeof out !== 'number' || !isFinite(out)) return NaN;
+      return out;
+    }catch(e){ return NaN; }
+  }
+  function checkEquation(userEq, correctX){
+    let raw = normalizeEquationInput(userEq);
+    const parts = raw.split('=');
+    if(parts.length !== 2) return {ok:false, why:"Your equation must have exactly one '=' sign."};
+    const L = sanitizeExpr(parts[0]); const R = sanitizeExpr(parts[1]);
+    if(!L || !R) return {ok:false, why:"Use only digits, x, + - * / ( ) and '='."};
+    const Lv = evalExpr(L, correctX), Rv = evalExpr(R, correctX);
+    if(isNaN(Lv) || isNaN(Rv)) return {ok:false, why:"I couldn't evaluate your equation. Check parentheses and symbols."};
+    const ok = Math.abs(Lv - Rv) < 1e-6;
+    return {ok, why: ok ? null : "At the correct solution, your left and right sides are not equal."};
+  }
+  const approxEq = (a,b,eps=1e-3)=>Math.abs(a-b)<=eps;
+
+  // ------------------ Problem Generators (parallel numbers) ------------------
+  function genBySlot(slot){
+    // slot 0..15 mapped to 8 categories x 2 each
+    const catIndex = Math.floor(slot/2);
+    const formIndex = slot%2; // 0 or 1
+    switch(catIndex){
+      case 0: return genA(formIndex);    // Translating phrases
+      case 1: return genB(formIndex);    // Perimeter
+      case 2: return genC(formIndex);    // DRT
+      case 3: return genD(formIndex);    // Consecutive integers
+      case 4: return genE(formIndex);    // Angles
+      case 5: return genF(formIndex);    // Proportions
+      case 6: return genG(formIndex);    // Coins & Taxi
+      case 7: return genH(formIndex);    // Amusement/Tickets
+    }
+  }
+
+  function genA(form){
+    if(form===0){
+      const m = randint(2,5), k = randint(3,12), x = randint(4,16);
+      const total = m*x + k;
+      return {
+        category:"A · Translating phrases",
+        prompt:`${k} more than ${m} times a number is ${total}. Use x as the unknown.`,
+        equation:`${m}*x + ${k} = ${total}`,
+        solution:x,
+        modelHints:[`Translate “${m} times a number” as ${m}x. “${k} more than” means add ${k}.`]
+      };
+    } else {
+      const n = choice([2,3,4,5]); let x = randint(6,36); x -= x % n; if(x===0) x+=n;
+      const k = randint(2,10); const total = x/n - k;
+      return {
+        category:"A · Translating phrases",
+        prompt:`One-${n}th of a number decreased by ${k} equals ${total}. Use x as the unknown.`,
+        equation:`x/${n} - ${k} = ${total}`,
+        solution:x,
+        modelHints:[`“One-${n}th of a number” is x/${n}. “Decreased by ${k}” means subtract ${k}.`]
+      };
+    }
+  }
+  function genB(form){
+    if(form===0){
+      const a = randint(3,10), x = randint(8,20); const P = 2*((x+a)+x);
+      return {
+        category:"B · Perimeter",
+        prompt:`A rectangle has width x and length (x + ${a}). If the perimeter is ${P}, write the equation for x (the width) and solve.`,
+        equation:`2*((x + ${a}) + x) = ${P}`,
+        solution:x,
+        modelHints:["Perimeter of a rectangle is 2(L + W). Substitute L = x + "+a+" and W = x."]
+      };
+    } else {
+      const L = randint(10,20), x = randint(12,24), P = 2*(L + x);
+      return {
+        category:"B · Perimeter",
+        prompt:`A rectangle has length ${L} and width x. If the perimeter is ${P}, write the equation and solve for x.`,
+        equation:`2*(${L} + x) = ${P}`,
+        solution:x,
+        modelHints:[`Use P = 2(L + W) with L = ${L} and W = x.`]
+      };
+    }
+  }
+  function genC(form){
+    if(form===0){
+      const r = choice([10,12,14,15,18,20]), x = randint(2,5), d = r*x;
+      return {
+        category:"C · Distance–Rate–Time",
+        prompt:`A bike travels at ${r} mph for x hours and goes ${d} miles. Write the equation and solve for x.`,
+        equation:`${r}*x = ${d}`,
+        solution:x,
+        modelHints:["Use d = r·t and let t = x."]
+      };
+    } else {
+      const t1 = choice([2,3,4]), r1 = choice([35,40,45,50]), r2 = choice([25,30,35]);
+      const x = randint(2,6), D = r1*t1 + r2*x;
+      return {
+        category:"C · Distance–Rate–Time",
+        prompt:`A trip has two parts: ${t1} hours at ${r1} mph and x hours at ${r2} mph for a total of ${D} miles. Write the equation and solve for x.`,
+        equation:`${r1}*${t1} + ${r2}*x = ${D}`,
+        solution:x,
+        modelHints:["Add the two distances: (rate)(time) + (rate)(time)."]
+      };
+    }
+  }
+  function genD(form){
+    if(form===0){
+      const x = randint(20,40), S = 3*x + 3;
+      return {
+        category:"D · Consecutive integers",
+        prompt:`The sum of three consecutive integers is ${S}. Let the smallest be x. Write the equation and solve for x.`,
+        equation:`x + (x + 1) + (x + 2) = ${S}`,
+        solution:x,
+        modelHints:["Three consecutive integers are x, x+1, x+2. Add them and set equal to the sum."]
+      };
+    } else {
+      let x = randint(20,50); if(x%2) x+=1; const S = 2*x + 2;
+      return {
+        category:"D · Consecutive integers",
+        prompt:`The sum of two consecutive even integers is ${S}. Let the smaller be x. Write the equation and solve for x.`,
+        equation:`x + (x + 2) = ${S}`,
+        solution:x,
+        modelHints:["Consecutive even integers differ by 2: x and x+2."]
+      };
+    }
+  }
+  function genE(form){
+    if(form===0){
+      const a = choice([10,12,14,16,18,20,22,24,26]); // keeps integer
+      return {
+        category:"E · Angles",
+        prompt:`Two complementary angles measure x and (x + ${a}). Write the equation and solve for x (in degrees).`,
+        equation:`x + (x + ${a}) = 90`,
+        solution:(90-a)/2,
+        modelHints:["Complementary angles sum to 90°."]
+      };
+    } else {
+      const b = choice([12,16,20,24,28,32,36,40,44]); // keeps integer
+      return {
+        category:"E · Angles",
+        prompt:`Two supplementary angles measure (3x) and (x + ${b}). Write the equation and solve for x (in degrees).`,
+        equation:`3*x + (x + ${b}) = 180`,
+        solution:(180-b)/4,
+        modelHints:["Supplementary angles sum to 180°."]
+      };
+    }
+  }
+  function genF(form){
+    if(form===0){
+      const den = choice([12,15,18,20]); const b = choice([3,4,5]); const a = choice([1,2,3,4,5]);
+      const denDiv = (den % b === 0) ? den : den*b;
+      const x = a*(denDiv/b);
+      return {
+        category:"F · Proportions",
+        prompt:`In a proportion, x is to ${denDiv} as ${a} is to ${b}. Write an equation and solve for x.`,
+        equation:`x/${denDiv} = ${a}/${b}`,
+        solution:x,
+        modelHints:[`“x is to ${denDiv} as ${a} is to ${b}” → x/${denDiv} = ${a}/${b}`]
+      };
+    } else {
+      const a=choice([3,4,5,6,7]), b=choice([5,6,7,8,9]), F = choice([20,24,28,32,36,40,48,56]);
+      return {
+        category:"F · Proportions",
+        prompt:`A recipe uses a ${a}:${b} ratio of sugar to flour. If flour is ${F} cups, let x be sugar (cups). Write an equation and solve for x.`,
+        equation:`x/${F} = ${a}/${b}`,
+        solution:(a/b)*F,
+        modelHints:[`Sugar : Flour = ${a}:${b} → x/${F} = ${a}/${b}`]
+      };
+    }
+  }
+  function genG(form){
+    if(form===0){
+      const n = randint(4,12), dmore = randint(5,12);
+      const total = 5*n + 10*(n + dmore);
+      return {
+        category:"G · Coins & Taxi",
+        prompt:`A jar has nickels and dimes worth $${(total/100).toFixed(2)}. There are ${dmore} more dimes than nickels. Let x be the number of nickels. Write an equation in cents and solve for x.`,
+        equation:`5*x + 10*(x + ${dmore}) = ${total}`,
+        solution:n,
+        modelHints:["Nickels are 5¢; dimes are 10¢. Value = (coin value)(count)."]
+      };
+    } else {
+      const base = choice([3,4,5,6]); const rate = choice([2,2.5,3,3.5]); const x = choice([4,5,6,7,8,9,10]);
+      const total = base + rate*x;
+      return {
+        category:"G · Coins & Taxi",
+        prompt:`A taxi charges a $${base} base fee plus $${rate} per mile. If the total cost is $${total.toFixed(2)}, let x be miles. Write an equation and solve for x.`,
+        equation:`${base} + ${rate}*x = ${total}`,
+        solution:x,
+        modelHints:["Cost = base fee + (rate)(miles)."]
+      };
+    }
+  }
+  function genH(form){
+    if(form===0){
+      const pa=12, pc=9; const T = choice([56,58,60,62,64,66]);
+      const x = randint(20, T-10); const R = pa*x + pc*(T - x);
+      return {
+        category:"H · Amusement/tickets",
+        prompt:`Child tickets are $${pc} and adult tickets are $${pa}. A school sold ${T} tickets total and collected $${R}. Let x be the number of adult tickets. Write one equation and solve for x.`,
+        equation:`${pa}*x + ${pc}*(${T} - x) = ${R}`,
+        solution:x,
+        modelHints:[`Total revenue = adult(${pa})·x + child(${pc})·(${T} − x).`]
+      };
+    } else {
+      const W = choice([15,18,20,22]); const C = choice([20,25,30]); const r = choice([2,3,4]); const x = randint(40,100);
+      const total = W*C + r*x;
+      return {
+        category:"H · Amusement/tickets",
+        prompt:`Wristbands cost $${W} each and ${C} were sold. Single-ride tickets cost $${r} each. If the group spent $${total}, let x be the number of ride tickets. Write an equation and solve for x.`,
+        equation:`${W}*${C} + ${r}*x = ${total}`,
+        solution:x,
+        modelHints:[`Total = wristbands(${W}·${C}) + rides(${r}·x).`]
+      };
+    }
+  }
+
+  // Build initial 16 problems
+  function initialSet(){
+    const arr = [];
+    for(let i=0;i<16;i++) arr.push(genBySlot(i));
+    return arr;
+  }
+
+  // ------------------ Rendering & Logic ------------------
+  let PROBLEMS = initialSet();
+  let solvedCount = 0;
+
+  function render(){
+    el('#title').textContent = TITLE;
+    const container = el('#quiz'); container.innerHTML='';
+    solvedCount = 0; el('#score').textContent = `0/16 fully correct`;
+
+    PROBLEMS.forEach((p, idx)=> renderCard(container, p, idx));
+  }
+
+  function resetSlot(idx){
+    PROBLEMS[idx] = genBySlot(idx); // new parallel problem
+    const container = el('#quiz');
+    const old = container.querySelector(`[data-slot="${idx}"]`);
+    const catHeaderNeeded = (idx%2===0);
+    const parent = old.parentElement;
+    const newCard = renderCard(null, PROBLEMS[idx], idx);
+    parent.replaceChild(newCard, old);
+    // if this was the first in a category, ensure the category header above still makes sense (kept because we don't remove it)
+  }
+
+  function renderCard(containerOrNull, p, idx){
+    const card = mk('div','problem'); card.dataset.slot = idx;
+    if(idx%2===0 && containerOrNull){ containerOrNull.appendChild(mk('div','category', p.category)); }
+
+    // Prompt
+    card.appendChild(mk('div', null, `<b>Q${idx+1}.</b> ${p.prompt}`));
+
+    // Equation stage
+    let eqTries = 0, solTries = 0, solved = false;
+    const eqLabel = mk('label', null, 'Step 1 — Write your equation (use x):');
+    const eqInput = mk('input'); eqInput.type='text';
+    const eqBtn = mk('button','btn primary','Check equation');
+    const eqStatus = mk('div','counter','');
+    const eqExplain = mk('div','explain small'); eqExplain.style.display='none';
+
+    // Solution stage (locked until equation is correct)
+    const solLabel = mk('label', null, 'Step 2 — Solve your equation for x:');
+    const solInput = mk('input'); solInput.type='text'; solInput.disabled = true;
+    const solBtn = mk('button','btn primary','Check solution'); solBtn.disabled = true;
+    const solStatus = mk('div','counter','');
+    const solExplain = mk('div','explain small'); solExplain.style.display='none';
+
+    function showEqHint(){
+      // Give light scaffolding WITHOUT revealing the final equation
+      const h = (p.modelHints && p.modelHints[0]) ? p.modelHints[0] : "Translate phrases carefully: multiply first (like 3x), then add/subtract constants; include exactly one '='.";
+      eqExplain.innerHTML = `<div><b>Hint:</b> ${h}</div><div class="small">No answer reveal until after 3 tries.</div>`;
+      eqExplain.style.display='block';
+    }
+    function showSolHint(){
+      const h = "Undo addition/subtraction first, then undo multiplication/division to isolate x. Keep both sides balanced.";
+      solExplain.innerHTML = `<div><b>Hint:</b> ${h}</div><div class="small">No answer reveal until after 3 tries.</div>`;
+      solExplain.style.display='block';
+    }
+
+    eqBtn.addEventListener('click', ()=>{
+      const res = checkEquation(eqInput.value, p.solution);
+      if(res.ok){
+        eqStatus.innerHTML = `<span class="badge ok">Equation ✓</span> <span class="small">Great—now solve it.</span>`;
+        solInput.disabled = false; solBtn.disabled = false;
+        eqExplain.style.display='none'; // keep feedback focused on success
+      }else{
+        eqTries += 1;
+        eqStatus.innerHTML = `<span class="badge err">Equation ✗</span> <span class="small">Try ${eqTries}/3</span>`;
+        showEqHint();
+        if(eqTries >= 3){
+          // Reveal canonical equation, then reset this slot
+          eqExplain.innerHTML = `<div><b>Answer shown (equation):</b> <code>${p.equation}</code></div><div class="small">Resetting with a new parallel problem…</div>`;
+          eqExplain.style.display='block';
+          setTimeout(()=> resetSlot(idx), 1400);
+        }
+      }
+    });
+
+    solBtn.addEventListener('click', ()=>{
+      const v = parseNumber(solInput.value);
+      const ok = !isNaN(v) && approxEq(v, p.solution, 1e-3);
+      if(ok){
+        solStatus.innerHTML = `<span class="badge ok">Solution ✓</span>`;
+        if(!solved){ solved = true; solvedCount += 1; el('#score').textContent = `${solvedCount}/16 fully correct`; }
+        solExplain.style.display='none';
+      }else{
+        solTries += 1;
+        solStatus.innerHTML = `<span class="badge err">Solution ✗</span> <span class="small">Try ${solTries}/3</span>`;
+        showSolHint();
+        if(solTries >= 3){
+          const displayVal = Number.isInteger(p.solution)? String(p.solution) : String(p.solution);
+          solExplain.innerHTML = `<div><b>Answer shown (solution):</b> x = ${displayVal}</div><div class="small">Resetting with a new parallel problem…</div>`;
+          solExplain.style.display='block';
+          setTimeout(()=> resetSlot(idx), 1400);
+        }
+      }
+    });
+
+    card.appendChild(eqLabel); card.appendChild(eqInput); card.appendChild(eqBtn); card.appendChild(eqStatus); card.appendChild(eqExplain);
+    card.appendChild(solLabel); card.appendChild(solInput); card.appendChild(solBtn); card.appendChild(solStatus); card.appendChild(solExplain);
+
+    if(containerOrNull){ containerOrNull.appendChild(card); }
+    return card;
+  }
+
+  // Export CSV
+  function exportCSV(){
+    const rows = [["Question","Category","Prompt","Correct Equation","Correct x"]];
+    PROBLEMS.forEach((p,i)=> rows.push([`Q${i+1}`, p.category, p.prompt, p.equation, p.solution]));
+    const csv = rows.map(r=>r.map(v=>String(v).includes(',')?`"${String(v).replace(/"/g,'""')}"`:v).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download = `free_response_translate_equations_retry_reset_${Date.now()}.csv`;
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.title = TITLE;
+    render();
+    el('#exportCsv').addEventListener('click', exportCSV);
+  });
+})();
+
+</script>
+</body>
+</html>

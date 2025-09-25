@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplifying Radicals Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                },
+            },
+        },
+    }
+    </script>
+    <!-- MathJax for rendering LaTeX -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .correct-answer {
+            border-color: #22c55e; /* green-500 */
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .incorrect-answer {
+            border-color: #ef4444; /* red-500 */
+            background-color: #fef2f2; /* red-50 */
+        }
+        /* Custom focus ring */
+        .custom-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* blue-400 equivalent */
+            border-color: #60a5fa; /* blue-400 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen p-4">
+    <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-4xl">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Simplifying Radicals Quiz</h1>
+            <p class="text-gray-600 mt-2">Simplify each expression. Use the '√' button to insert a radical symbol.</p>
+        </div>
+
+        <!-- Quiz questions will be inserted here -->
+        <div id="quiz-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+        <!-- Submission and Results Section -->
+        <div class="mt-8 text-center">
+            <button id="reset-btn" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-300 ease-in-out transform hover:scale-105">
+                Generate New Quiz
+            </button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quizContainer = document.getElementById('quiz-container');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // --- Dynamic Question Generators ---
+
+            const perfectSquares = [4, 9, 16, 25, 36, 49, 64, 81, 100];
+            const primes = [2, 3, 5, 7, 11];
+            const variables = 'abcdefghjkmnpqrstuvwxyz'.split(''); // Exclude ambiguous chars
+            let usedRadicands = new Set();
+
+            const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            // Type 1: Based on sqrt(18)
+            function generateType1() {
+                let p, n, radicand;
+                do {
+                    p = getRandom([4, 9, 25, 49]);
+                    n = 2;
+                    radicand = p * n;
+                } while (usedRadicands.has(radicand));
+                usedRadicands.add(radicand);
+                const sqrtP = Math.sqrt(p);
+                return {
+                    question: `\\(\\sqrt{${radicand}}\\)`,
+                    answer: `${sqrtP}√${n}`,
+                    solution: `<b>Step 1:</b> Find the largest perfect square that divides ${radicand}, which is ${p}.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{${p} \\cdot ${n}}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{${p}} \\cdot \\sqrt{${n}} = ${sqrtP}\\sqrt{${n}}\\).`
+                };
+            }
+
+            // Type 2: Based on sqrt(28)
+            function generateType2() {
+                let p, n, radicand;
+                do {
+                    p = getRandom([4, 9, 25]);
+                    n = getRandom([3, 5, 7]);
+                    radicand = p * n;
+                } while (usedRadicands.has(radicand));
+                usedRadicands.add(radicand);
+                const sqrtP = Math.sqrt(p);
+                 return {
+                    question: `\\(\\sqrt{${radicand}}\\)`,
+                    answer: `${sqrtP}√${n}`,
+                    solution: `<b>Step 1:</b> Find the largest perfect square that divides ${radicand}, which is ${p}.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{${p} \\cdot ${n}}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{${p}} \\cdot \\sqrt{${n}} = ${sqrtP}\\sqrt{${n}}\\).`
+                };
+            }
+
+            // Type 3: Based on sqrt(162)
+            function generateType3() {
+                let p, n, radicand;
+                do {
+                    p = getRandom([36, 49, 64, 81, 100]);
+                    n = getRandom([2, 3]);
+                    radicand = p * n;
+                } while (usedRadicands.has(radicand));
+                usedRadicands.add(radicand);
+                const sqrtP = Math.sqrt(p);
+                return {
+                    question: `\\(\\sqrt{${radicand}}\\)`,
+                    answer: `${sqrtP}√${n}`,
+                    solution: `<b>Step 1:</b> Find the largest perfect square that divides ${radicand}, which is ${p}.<br><b>Step 2:</b> Rewrite as \\(\\sqrt{${p} \\cdot ${n}}\\).<br><b>Step 3:</b> Simplify: \\(\\sqrt{${p}} \\cdot \\sqrt{${n}} = ${sqrtP}\\sqrt{${n}}\\).`
+                };
+            }
+
+            // Type 4: Based on sqrt(16a^2)
+            function generateType4() {
+                let p, v, e, radicandStr;
+                do {
+                    p = getRandom(perfectSquares);
+                    v = getRandom(variables);
+                    e = (Math.floor(Math.random() * 4) + 1) * 2; // 2, 4, 6, 8
+                    radicandStr = `${p}${v}^${e}`;
+                } while (usedRadicands.has(radicandStr));
+                usedRadicands.add(radicandStr);
+                const sqrtP = Math.sqrt(p);
+                const simplifiedE = e / 2;
+                const answer = `${sqrtP}${v}${simplifiedE > 1 ? `^${simplifiedE}` : ''}`;
+                return {
+                    question: `\\(\\sqrt{${radicandStr}}\\)`,
+                    answer: answer,
+                    solution: `<b>Step 1:</b> Separate: \\(\\sqrt{${p}} \\cdot \\sqrt{${v}^${e}}\\).<br><b>Step 2:</b> Simplify each part: \\(\\sqrt{${p}} = ${sqrtP}\\) and \\(\\sqrt{${v}^${e}} = ${v}^${simplifiedE}\\).<br><b>Step 3:</b> Combine the results: \\(${answer}\\).`
+                };
+            }
+
+            // Type 5: Based on sqrt(12x^2y^5)
+            function generateType5() {
+                let p, n, v1, v2, e1, e2, numRadicand, radicandStr;
+                do {
+                    p = getRandom([4, 9, 25]);
+                    n = getRandom([2, 3, 5]);
+                    v1 = getRandom(variables);
+                    do { v2 = getRandom(variables); } while (v1 === v2);
+                    e1 = (Math.floor(Math.random() * 3) + 1) * 2; // 2, 4, 6
+                    e2 = (Math.floor(Math.random() * 3) * 2) + 3; // 3, 5, 7
+                    numRadicand = p * n;
+                    radicandStr = `${numRadicand}${v1}^${e1}${v2}^${e2}`;
+                } while (usedRadicands.has(radicandStr));
+                usedRadicands.add(radicandStr);
+
+                const sqrtP = Math.sqrt(p);
+                const simplifiedE1 = e1 / 2;
+                const simplifiedE2 = (e2 - 1) / 2;
+                const outside = `${sqrtP}${v1}${simplifiedE1 > 1 ? `^${simplifiedE1}` : ''}${v2}${simplifiedE2 > 1 ? `^${simplifiedE2}` : ''}`;
+                const inside = `${n}${v2}`;
+                const answer = `${outside}√${inside}`;
+                
+                return {
+                    question: `\\(\\sqrt{${radicandStr}}\\)`,
+                    answer: answer,
+                    solution: `<b>Step 1:</b> Group perfect squares: \\(\\sqrt{(${p}${v1}^${e1}${v2}^${e2-1}) \\cdot (${inside})}\\).<br><b>Step 2:</b> Separate into two radicals: \\(\\sqrt{${p}${v1}^${e1}${v2}^${e2-1}} \\cdot \\sqrt{${inside}}\\).<br><b>Step 3:</b> Simplify the first radical: \\(${outside}\\).<br><b>Step 4:</b> Combine: \\(${answer}\\).`
+                };
+            }
+            
+            // Type 6: Based on sqrt(45a^4b^9c^6)
+            function generateType6() {
+                let p, n, v1, v2, v3, e1, e2, e3, numRadicand, radicandStr;
+                do {
+                    p = getRandom([4, 9, 16, 25]);
+                    n = getRandom([2, 3, 5]);
+                    let vars = [...variables];
+                    v1 = vars.splice(Math.floor(Math.random() * vars.length), 1)[0];
+                    v2 = vars.splice(Math.floor(Math.random() * vars.length), 1)[0];
+                    v3 = vars.splice(Math.floor(Math.random() * vars.length), 1)[0];
+                    e1 = (Math.floor(Math.random() * 2) + 1) * 2; // 2, 4
+                    e2 = (Math.floor(Math.random() * 2) * 2) + 3; // 3, 5 (odd one)
+                    e3 = (Math.floor(Math.random() * 2) + 1) * 2; // 2, 4
+                    numRadicand = p * n;
+                    radicandStr = `${numRadicand}${v1}^${e1}${v2}^${e2}${v3}^${e3}`;
+                } while (usedRadicands.has(radicandStr));
+                usedRadicands.add(radicandStr);
+
+                const sqrtP = Math.sqrt(p);
+                const simplifiedE1 = e1 / 2;
+                const simplifiedE2 = (e2 - 1) / 2;
+                const simplifiedE3 = e3 / 2;
+                const outside = `${sqrtP}${v1}^${simplifiedE1}${v2}${simplifiedE2 > 1 ? `^${simplifiedE2}`: ''}${v3}^${simplifiedE3}`;
+                const inside = `${n}${v2}`;
+                const answer = `${outside}√${inside}`;
+
+                return {
+                    question: `\\(\\sqrt{${radicandStr}}\\)`,
+                    answer: answer,
+                    solution: `<b>Step 1:</b> Group perfect squares: \\(\\sqrt{(${p}${v1}^${e1}${v2}^${e2-1}${v3}^${e3}) \\cdot (${inside})}\\).<br><b>Step 2:</b> Separate: \\(\\sqrt{${p}${v1}^${e1}${v2}^${e2-1}${v3}^${e3}} \\cdot \\sqrt{${inside}}\\).<br><b>Step 3:</b> Simplify the perfect square radical to \\(${outside}\\).<br><b>Step 4:</b> Combine to get \\(${answer}\\).`
+                };
+            }
+
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function generateQuiz() {
+                quizContainer.innerHTML = '';
+                usedRadicands.clear();
+                let questions = [];
+
+                const generators = [generateType1, generateType2, generateType3, generateType4, generateType5, generateType6];
+                for(const generator of generators) {
+                    for (let i = 0; i < 4; i++) {
+                        questions.push(generator());
+                    }
+                }
+                
+                shuffle(questions);
+
+                questions.forEach((q) => {
+                    const questionCard = document.createElement('div');
+                    questionCard.className = 'bg-gray-100 p-5 rounded-xl flex flex-col items-center justify-center space-y-4';
+                    
+                    const questionText = document.createElement('p');
+                    questionText.className = 'text-2xl font-medium';
+                    questionText.textContent = q.question;
+                    
+                    const answerWrapper = document.createElement('div');
+                    answerWrapper.className = 'relative flex items-center w-full';
+
+                    const answerInput = document.createElement('input');
+                    answerInput.type = 'text';
+                    answerInput.className = 'w-full pl-3 pr-10 py-2 border-2 border-gray-300 rounded-md transition-colors duration-200 custom-focus';
+                    answerInput.setAttribute('autocomplete', 'off');
+                    answerInput.setAttribute('spellcheck', 'false');
+
+                    const radicalButton = document.createElement('button');
+                    radicalButton.textContent = '√';
+                    radicalButton.className = 'absolute right-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold w-8 h-8 rounded-md flex items-center justify-center transition-colors duration-200';
+                    radicalButton.type = 'button';
+                    
+                    radicalButton.addEventListener('click', () => {
+                        const start = answerInput.selectionStart;
+                        const end = answerInput.selectionEnd;
+                        const text = answerInput.value;
+                        answerInput.value = text.substring(0, start) + '√' + text.substring(end);
+                        answerInput.focus();
+                        answerInput.setSelectionRange(start + 1, start + 1);
+                    });
+
+                    const submitCardButton = document.createElement('button');
+                    submitCardButton.textContent = 'Submit';
+                    submitCardButton.className = 'w-full bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors duration-200';
+
+                    const solutionDiv = document.createElement('div');
+                    solutionDiv.className = 'hidden w-full p-3 mt-2 text-sm text-left bg-indigo-50 border border-indigo-200 rounded-md';
+
+                    submitCardButton.addEventListener('click', () => {
+                        const userAnswer = answerInput.value.replace(/\s+/g, '').toLowerCase();
+                        const correctAnswer = q.answer.replace(/\s+/g, '').toLowerCase();
+
+                        answerInput.classList.remove('correct-answer', 'incorrect-answer');
+
+                        if (userAnswer === correctAnswer) {
+                            answerInput.classList.add('correct-answer');
+                        } else {
+                            answerInput.classList.add('incorrect-answer');
+                        }
+                        
+                        answerInput.disabled = true;
+                        submitCardButton.disabled = true;
+                        submitCardButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                        solutionDiv.innerHTML = q.solution;
+                        solutionDiv.classList.remove('hidden');
+                        
+                        if (window.MathJax) {
+                            window.MathJax.typesetPromise([solutionDiv]);
+                        }
+                    });
+
+                    answerWrapper.appendChild(answerInput);
+                    answerWrapper.appendChild(radicalButton);
+                    questionCard.appendChild(questionText);
+                    questionCard.appendChild(answerWrapper);
+                    questionCard.appendChild(submitCardButton);
+                    questionCard.appendChild(solutionDiv);
+                    quizContainer.appendChild(questionCard);
+                });
+                
+                if (window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }
+            
+            resetBtn.addEventListener('click', generateQuiz);
+            generateQuiz();
+        });
+    </script>
+</body>
+</html>
+

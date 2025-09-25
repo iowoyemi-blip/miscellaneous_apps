@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polynomials Jeopardy Review</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font as per instructions */
+            background-color: #000080; /* Dark Blue */
+            color: #FFFFFF; /* White */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Main Heading */
+        h1 {
+            color: #FFD700; /* Gold */
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 5px rgba(0,0,0,0.5);
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        /* Game Board Grid - Adjusted for 7 columns */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* Now 7 columns */
+            gap: 10px;
+            width: 95%; /* Wider to accommodate more columns */
+            max-width: 1400px; /* Increased max-width */
+            background-color: #0000CD; /* Medium Blue */
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.7);
+        }
+
+        /* Category Titles */
+        .category-title {
+            background-color: #0000CD; /* Medium Blue */
+            color: #FFD700; /* Gold */
+            font-weight: bold;
+            text-align: center;
+            padding: 15px 5px;
+            border: 2px solid #FFD700;
+            border-radius: 8px; /* Rounded corners */
+            font-size: 0.85em; /* Slightly smaller font for more categories */
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px; /* Ensure consistent height */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            line-height: 1.2; /* Adjust line height for multi-line titles */
+        }
+
+        /* Question Boxes */
+        .question-box {
+            background-color: #008080; /* Teal */
+            color: #FFFFFF;
+            font-size: 1.6em; /* Slightly smaller font for more categories */
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #FFD700;
+            border-radius: 8px; /* Rounded corners */
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            min-height: 80px; /* Ensure consistent height */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .question-box:hover:not(.answered) {
+            background-color: #00BFFF; /* Deep Sky Blue */
+            transform: scale(1.02);
+        }
+
+        .question-box.answered {
+            background-color: #333333; /* Darker gray once answered */
+            color: #777777; /* Lighter gray for text */
+            cursor: not-allowed;
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5); /* Inset shadow for answered */
+        }
+
+        /* Question Display Overlay */
+        #question-display {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black overlay */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px; /* Add padding for smaller screens */
+            box-sizing: border-box;
+        }
+
+        /* Content within Question Display */
+        #question-content {
+            background-color: #0000CD;
+            border: 5px solid #FFD700;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 20px;
+            max-width: 800px;
+            width: 95%; /* Make it more fluid */
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #question-text {
+            font-size: 2.2em; /* Slightly smaller for better fit */
+            margin-bottom: 25px;
+            color: #FFFFFF;
+            line-height: 1.4;
+        }
+
+        /* Input Field */
+        #answer-input {
+            width: 80%;
+            max-width: 400px; /* Limit max width */
+            padding: 15px;
+            font-size: 1.4em;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: #333333;
+            color: #FFFFFF;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .question-buttons button {
+            background-color: #28a745; /* Green */
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin: 10px; /* Spacing between buttons */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .question-buttons button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        #show-answer-btn {
+            background-color: #dc3545; /* Red */
+        }
+
+        #show-answer-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* Feedback and Solution Display */
+        #feedback-message {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #FFD700; /* Gold for feedback */
+            display: none; /* Hidden by default */
+        }
+
+        #solution-display {
+            font-size: 1.4em;
+            color: #ADD8E6; /* Light Blue for solution */
+            margin-top: 20px;
+            text-align: left;
+            white-space: pre-wrap; /* Preserve newlines */
+            background-color: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #FFD700;
+            max-height: 300px; /* Limit height for long solutions */
+            overflow-y: auto; /* Scroll if content overflows */
+            display: none; /* Hidden by default */
+            width: 90%;
+            box-sizing: border-box;
+        }
+
+        /* Score Board */
+        #score-board {
+            width: 95%; /* Wider to match game board */
+            max-width: 1400px; /* Increased max-width */
+            background-color: #0000CD;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.7);
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #scores {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.5em;
+            color: #FFFFFF;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .player-score {
+            margin: 10px 15px; /* Adjust margin for wrap */
+            padding: 10px 20px;
+            background-color: #008080;
+            border-radius: 8px;
+            border: 2px solid #FFD700;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .player-score span {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        /* Player selection buttons */
+        #player-selection button {
+            background-color: #6A5ACD; /* Slate Blue */
+            color: white;
+            padding: 8px 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+        #player-selection button:hover {
+            background-color: #483D8B;
+        }
+        #player-selection button.active {
+            background-color: #FFD700;
+            color: #000080;
+            border: 2px solid #000080;
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            #game-board {
+                grid-template-columns: repeat(4, 1fr); /* 4 columns on medium screens */
+            }
+            .category-title {
+                font-size: 0.8em;
+            }
+            .question-box {
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            #game-board {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns on smaller screens */
+                width: 95%;
+            }
+            .category-title, .question-box {
+                font-size: 0.9em;
+                min-height: 60px;
+            }
+            #question-text {
+                font-size: 1.8em;
+            }
+            #answer-input, .question-buttons button {
+                font-size: 1.2em;
+                padding: 10px 20px;
+            }
+            #feedback-message, #solution-display {
+                font-size: 1.2em;
+            }
+            #scores {
+                font-size: 1.2em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #game-board {
+                grid-template-columns: 1fr; /* 1 column on very small screens */
+            }
+            .category-title, .question-box {
+                font-size: 0.8em;
+                min-height: 50px;
+            }
+            #question-text {
+                font-size: 1.5em;
+            }
+            #answer-input, .question-buttons button {
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+            #feedback-message, #solution-display {
+                font-size: 1em;
+            }
+            #scores {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Polynomials Jeopardy Review</h1>
+
+    <div id="game-board">
+        <!-- Category Titles - 7 Categories -->
+        <div class="category-title">Polynomial Classification</div>
+        <div class="category-title">Add & Subtract Polynomials</div>
+        <div class="category-title">Multiplying Polynomials</div>
+        <div class="category-title">Factor Binomials (GCF)</div>
+        <div class="category-title">Factor by Grouping</div>
+        <div class="category-title">Factor Trinomials (Split Middle)</div>
+        <div class="category-title">Factor Difference of Squares</div>
+
+        <!-- Questions - Row 1 (100 points) -->
+        <div class="question-box" data-category="0" data-value="100">100</div>
+        <div class="question-box" data-category="1" data-value="100">100</div>
+        <div class="question-box" data-category="2" data-value="100">100</div>
+        <div class="question-box" data-category="3" data-value="100">100</div>
+        <div class="question-box" data-category="4" data-value="100">100</div>
+        <div class="question-box" data-category="5" data-value="100">100</div>
+        <div class="question-box" data-category="6" data-value="100">100</div>
+
+        <!-- Questions - Row 2 (200 points) -->
+        <div class="question-box" data-category="0" data-value="200">200</div>
+        <div class="question-box" data-category="1" data-value="200">200</div>
+        <div class="question-box" data-category="2" data-value="200">200</div>
+        <div class="question-box" data-category="3" data-value="200">200</div>
+        <div class="question-box" data-category="4" data-value="200">200</div>
+        <div class="question-box" data-category="5" data-value="200">200</div>
+        <div class="question-box" data-category="6" data-value="200">200</div>
+
+        <!-- Questions - Row 3 (300 points) -->
+        <div class="question-box" data-category="0" data-value="300">300</div>
+        <div class="question-box" data-category="1" data-value="300">300</div>
+        <div class="question-box" data-category="2" data-value="300">300</div>
+        <div class="question-box" data-category="3" data-value="300">300</div>
+        <div class="question-box" data-category="4" data-value="300">300</div>
+        <div class="question-box" data-category="5" data-value="300">300</div>
+        <div class="question-box" data-category="6" data-value="300">300</div>
+
+        <!-- Questions - Row 4 (400 points) -->
+        <div class="question-box" data-category="0" data-value="400">400</div>
+        <div class="question-box" data-category="1" data-value="400">400</div>
+        <div class="question-box" data-category="2" data-value="400">400</div>
+        <div class="question-box" data-category="3" data-value="400">400</div>
+        <div class="question-box" data-category="4" data-value="400">400</div>
+        <div class="question-box" data-category="5" data-value="400">400</div>
+        <div class="question-box" data-category="6" data-value="400">400</div>
+
+        <!-- Questions - Row 5 (500 points) -->
+        <div class="question-box" data-category="0" data-value="500">500</div>
+        <div class="question-box" data-category="1" data-value="500">500</div>
+        <div class="question-box" data-category="2" data-value="500">500</div>
+        <div class="question-box" data-category="3" data-value="500">500</div>
+        <div class="question-box" data-category="4" data-value="500">500</div>
+        <div class="question-box" data-category="5" data-value="500">500</div>
+        <div class="question-box" data-category="6" data-value="500">500</div>
+    </div>
+
+    <div id="score-board">
+        <h2>Scores</h2>
+        <div id="scores">
+            <div class="player-score">Player 1: <span id="score1">0</span></div>
+            <div class="player-score">Player 2: <span id="score2">0</span></div>
+            <!-- Add more players by duplicating the above div and updating the id (e.g., score3) -->
+        </div>
+        <div id="player-selection">
+            <p>Current Player:</p>
+            <button id="btn-player1" onclick="setCurrentPlayer(1)">Player 1</button>
+            <button id="btn-player2" onclick="setCurrentPlayer(2)">Player 2</button>
+            <!-- Add buttons for more players if you add them above (e.g., onclick="setCurrentPlayer(3)") -->
+        </div>
+    </div>
+
+    <!-- Question Display Overlay -->
+    <div id="question-display">
+        <div id="question-content">
+            <p id="question-text"></p>
+            <input type="text" id="answer-input" placeholder="Your Answer">
+            <div class="question-buttons">
+                <button id="submit-answer-btn">Submit Answer</button>
+                <button id="show-answer-btn">Show Solution</button>
+            </div>
+            <p id="feedback-message"></p>
+            <div id="solution-display"></div>
+            <button id="close-question-btn" style="margin-top: 20px; background-color: #6c757d;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME DATA ---
+        // This is where you will input your questions, answers, and solutions.
+        // The structure is questions[category_index][value_index]
+        // Categories:
+        // 0=Polynomial Classification
+        // 1=Add & Subtract Polynomials
+        // 2=Multiplying Polynomials
+        // 3=Factor Binomials (GCF)
+        // 4=Factor by Grouping
+        // 5=Factor Trinomials (Split Middle)
+        // 6=Factor Difference of Squares
+        // Values: 0=100, 1=200, 2=300, 3=400, 4=500
+        const questions = [
+            // Category 0: Rewrite a polynomial in standard form then identify the leading coefficients the degrees and the number of terms and then classify the polynomial
+            [
+                {
+                    q: "For 5x - 2x^2 + 3, rewrite in standard form, identify LC, degree, terms, and classify.",
+                    a: "Standard: -2x^2 + 5x + 3; LC: -2; Degree: 2; Terms: 3; Classify: Quadratic Trinomial",
+                    solution: "Standard form arranges terms by decreasing degree: -2x^2 + 5x + 3.\nLeading Coefficient (LC): The coefficient of the highest degree term, which is -2.\nDegree: The highest exponent of the variable, which is 2.\nNumber of Terms: Count the terms, which is 3.\nClassification: Degree 2 is Quadratic, 3 terms is Trinomial."
+                },
+                {
+                    q: "For 7x^3 - 4x + 10x^4, rewrite in standard form, identify LC, degree, terms, and classify.",
+                    a: "Standard: 10x^4 + 7x^3 - 4x; LC: 10; Degree: 4; Terms: 3; Classify: Quartic Trinomial",
+                    solution: "Standard form: 10x^4 + 7x^3 - 4x.\nLC: 10.\nDegree: 4.\nTerms: 3.\nClassification: Degree 4 is Quartic, 3 terms is Trinomial."
+                },
+                {
+                    q: "For 9 - x^5, rewrite in standard form, identify LC, degree, terms, and classify.",
+                    a: "Standard: -x^5 + 9; LC: -1; Degree: 5; Terms: 2; Classify: Quintic Binomial",
+                    solution: "Standard form: -x^5 + 9.\nLC: -1.\nDegree: 5.\nTerms: 2.\nClassification: Degree 5 is Quintic, 2 terms is Binomial."
+                },
+                {
+                    q: "For 12x, rewrite in standard form, identify LC, degree, terms, and classify.",
+                    a: "Standard: 12x; LC: 12; Degree: 1; Terms: 1; Classify: Linear Monomial",
+                    solution: "Standard form: 12x.\nLC: 12.\nDegree: 1.\nTerms: 1.\nClassification: Degree 1 is Linear, 1 term is Monomial."
+                },
+                {
+                    q: "For 8, rewrite in standard form, identify LC, degree, terms, and classify.",
+                    a: "Standard: 8; LC: 8; Degree: 0; Terms: 1; Classify: Constant Monomial",
+                    solution: "Standard form: 8.\nLC: 8.\nDegree: 0 (since it's a constant).\nTerms: 1.\nClassification: Degree 0 is Constant, 1 term is Monomial."
+                }
+            ],
+            // Category 1: Add and subtract 2 polynomials
+            [
+                {
+                    q: "Add: (3x + 5) + (2x - 1)",
+                    a: "5x + 4",
+                    solution: "Combine like terms:\n(3x + 2x) + (5 - 1)\n5x + 4"
+                },
+                {
+                    q: "Subtract: (4y^2 + 2y) - (y^2 - 3y)",
+                    a: "3y^2 + 5y",
+                    solution: "Distribute the negative sign, then combine like terms:\n4y^2 + 2y - y^2 + 3y\n(4y^2 - y^2) + (2y + 3y)\n3y^2 + 5y"
+                },
+                {
+                    q: "Add: (x^2 - 6x + 2) + (3x^2 + x - 7)",
+                    a: "4x^2 - 5x - 5",
+                    solution: "Combine like terms:\n(x^2 + 3x^2) + (-6x + x) + (2 - 7)\n4x^2 - 5x - 5"
+                },
+                {
+                    q: "Subtract: (5a^3 + 2a - 8) - (2a^3 - 4a + 1)",
+                    a: "3a^3 + 6a - 9",
+                    solution: "Distribute the negative sign, then combine like terms:\n5a^3 + 2a - 8 - 2a^3 + 4a - 1\n(5a^3 - 2a^3) + (2a + 4a) + (-8 - 1)\n3a^3 + 6a - 9"
+                },
+                {
+                    q: "Add: (2x^3 + 4x^2 - x) + (-x^3 + 2x^2 + 5x)",
+                    a: "x^3 + 6x^2 + 4x",
+                    solution: "Combine like terms:\n(2x^3 - x^3) + (4x^2 + 2x^2) + (-x + 5x)\nx^3 + 6x^2 + 4x"
+                }
+            ],
+            // Category 2: Multiplying polynomials up to degrees of 3
+            [
+                {
+                    q: "Multiply: 3x(x + 4)",
+                    a: "3x^2 + 12x",
+                    solution: "Distribute 3x to each term inside the parenthesis:\n3x * x + 3x * 4\n3x^2 + 12x"
+                },
+                {
+                    q: "Multiply: (x + 2)(x - 3)",
+                    a: "x^2 - x - 6",
+                    solution: "Use FOIL (First, Outer, Inner, Last):\nFirst: x * x = x^2\nOuter: x * -3 = -3x\nInner: 2 * x = 2x\nLast: 2 * -3 = -6\nCombine: x^2 - 3x + 2x - 6 = x^2 - x - 6"
+                },
+                {
+                    q: "Multiply: (2y - 1)(y + 5)",
+                    a: "2y^2 + 9y - 5",
+                    solution: "Use FOIL:\nFirst: 2y * y = 2y^2\nOuter: 2y * 5 = 10y\nInner: -1 * y = -y\nLast: -1 * 5 = -5\nCombine: 2y^2 + 10y - y - 5 = 2y^2 + 9y - 5"
+                },
+                {
+                    q: "Multiply: (x + 1)(x^2 - x + 1)",
+                    a: "x^3 + 1",
+                    solution: "Distribute each term from the first polynomial to the second:\nx(x^2 - x + 1) + 1(x^2 - x + 1)\nx^3 - x^2 + x + x^2 - x + 1\nCombine like terms: x^3 + (-x^2 + x^2) + (x - x) + 1\nx^3 + 0 + 0 + 1\nx^3 + 1"
+                },
+                {
+                    q: "Multiply: (a + 2)(a^2 + 3a - 4)",
+                    a: "a^3 + 5a^2 + 2a - 8",
+                    solution: "Distribute each term from the first polynomial to the second:\na(a^2 + 3a - 4) + 2(a^2 + 3a - 4)\na^3 + 3a^2 - 4a + 2a^2 + 6a - 8\nCombine like terms:\na^3 + (3a^2 + 2a^2) + (-4a + 6a) - 8\na^3 + 5a^2 + 2a - 8"
+                }
+            ],
+            // Category 3: Factor binomials using GCF
+            [
+                {
+                    q: "Factor: 4x + 8",
+                    a: "4(x + 2)",
+                    solution: "The greatest common factor (GCF) of 4x and 8 is 4.\nDivide each term by 4: 4x/4 = x, 8/4 = 2.\nResult: 4(x + 2)"
+                },
+                {
+                    q: "Factor: 6y^2 - 9y",
+                    a: "3y(2y - 3)",
+                    solution: "The GCF of 6y^2 and 9y is 3y.\nDivide each term by 3y: 6y^2/3y = 2y, -9y/3y = -3.\nResult: 3y(2y - 3)"
+                },
+                {
+                    q: "Factor: 10a^3 + 15a^2",
+                    a: "5a^2(2a + 3)",
+                    solution: "The GCF of 10a^3 and 15a^2 is 5a^2.\nDivide each term by 5a^2: 10a^3/5a^2 = 2a, 15a^2/5a^2 = 3.\nResult: 5a^2(2a + 3)"
+                },
+                {
+                    q: "Factor: 7x - 7",
+                    a: "7(x - 1)",
+                    solution: "The GCF of 7x and 7 is 7.\nDivide each term by 7: 7x/7 = x, -7/7 = -1.\nResult: 7(x - 1)"
+                },
+                {
+                    q: "Factor: 12m^4 - 18m^2",
+                    a: "6m^2(2m^2 - 3)",
+                    solution: "The GCF of 12m^4 and 18m^2 is 6m^2.\nDivide each term by 6m^2: 12m^4/6m^2 = 2m^2, -18m^2/6m^2 = -3.\nResult: 6m^2(2m^2 - 3)"
+                }
+            ],
+            // Category 4: Factor polynomials by grouping
+            [
+                {
+                    q: "Factor: x^3 + 2x^2 + 3x + 6",
+                    a: "(x^2 + 3)(x + 2)",
+                    solution: "1. Group the first two terms and the last two terms: (x^3 + 2x^2) + (3x + 6)\n2. Factor out the GCF from each group: x^2(x + 2) + 3(x + 2)\n3. Factor out the common binomial factor (x + 2): (x + 2)(x^2 + 3)"
+                },
+                {
+                    q: "Factor: y^3 - 4y^2 + 5y - 20",
+                    a: "(y^2 + 5)(y - 4)",
+                    solution: "1. Group: (y^3 - 4y^2) + (5y - 20)\n2. Factor GCF from each group: y^2(y - 4) + 5(y - 4)\n3. Factor out common binomial: (y - 4)(y^2 + 5)"
+                },
+                {
+                    q: "Factor: 2a^3 + 6a^2 + a + 3",
+                    a: "(2a^2 + 1)(a + 3)",
+                    solution: "1. Group: (2a^3 + 6a^2) + (a + 3)\n2. Factor GCF: 2a^2(a + 3) + 1(a + 3)\n3. Factor out common binomial: (a + 3)(2a^2 + 1)"
+                },
+                {
+                    q: "Factor: x^2 - xy + 3x - 3y",
+                    a: "(x + 3)(x - y)",
+                    solution: "1. Group: (x^2 - xy) + (3x - 3y)\n2. Factor GCF: x(x - y) + 3(x - y)\n3. Factor out common binomial: (x - y)(x + 3)"
+                },
+                {
+                    q: "Factor: 4m^3 - 8m^2 - 3m + 6",
+                    a: "(4m^2 - 3)(m - 2)",
+                    solution: "1. Group: (4m^3 - 8m^2) + (-3m + 6)\n2. Factor GCF (note the negative for the second group): 4m^2(m - 2) - 3(m - 2)\n3. Factor out common binomial: (m - 2)(4m^2 - 3)"
+                }
+            ],
+            // Category 5: Factor trinomials by splitting the middle
+            [
+                {
+                    q: "Factor: x^2 + 5x + 6",
+                    a: "(x + 2)(x + 3)",
+                    solution: "1. Find two numbers that multiply to 6 and add to 5 (2 and 3).\n2. Split the middle term: x^2 + 2x + 3x + 6\n3. Factor by grouping: x(x + 2) + 3(x + 2)\n4. Result: (x + 2)(x + 3)"
+                },
+                {
+                    q: "Factor: x^2 - 7x + 10",
+                    a: "(x - 2)(x - 5)",
+                    solution: "1. Find two numbers that multiply to 10 and add to -7 (-2 and -5).\n2. Split the middle term: x^2 - 2x - 5x + 10\n3. Factor by grouping: x(x - 2) - 5(x - 2)\n4. Result: (x - 2)(x - 5)"
+                },
+                {
+                    q: "Factor: 2x^2 + 7x + 3",
+                    a: "(2x + 1)(x + 3)",
+                    solution: "1. Multiply a*c: 2*3 = 6. Find two numbers that multiply to 6 and add to 7 (1 and 6).\n2. Split the middle term: 2x^2 + x + 6x + 3\n3. Factor by grouping: x(2x + 1) + 3(2x + 1)\n4. Result: (2x + 1)(x + 3)"
+                },
+                {
+                    q: "Factor: 3x^2 - 10x + 8",
+                    a: "(3x - 4)(x - 2)",
+                    solution: "1. Multiply a*c: 3*8 = 24. Find two numbers that multiply to 24 and add to -10 (-4 and -6).\n2. Split the middle term: 3x^2 - 4x - 6x + 8\n3. Factor by grouping: x(3x - 4) - 2(3x - 4)\n4. Result: (3x - 4)(x - 2)"
+                },
+                {
+                    q: "Factor: 4x^2 + 4x - 3",
+                    a: "(2x - 1)(2x + 3)",
+                    solution: "1. Multiply a*c: 4*(-3) = -12. Find two numbers that multiply to -12 and add to 4 (-2 and 6).\n2. Split the middle term: 4x^2 - 2x + 6x - 3\n3. Factor by grouping: 2x(2x - 1) + 3(2x - 1)\n4. Result: (2x - 1)(2x + 3)"
+                }
+            ],
+            // Category 6: Factor difference of squares
+            [
+                {
+                    q: "Factor: x^2 - 25",
+                    a: "(x - 5)(x + 5)",
+                    solution: "This is a difference of squares (a^2 - b^2 = (a - b)(a + b)).\nHere, a = x and b = 5.\nResult: (x - 5)(x + 5)"
+                },
+                {
+                    q: "Factor: y^2 - 81",
+                    a: "(y - 9)(y + 9)",
+                    solution: "This is a difference of squares.\nHere, a = y and b = 9.\nResult: (y - 9)(y + 9)"
+                },
+                {
+                    q: "Factor: 4a^2 - 49",
+                    a: "(2a - 7)(2a + 7)",
+                    solution: "This is a difference of squares.\nHere, a = 2a (since (2a)^2 = 4a^2) and b = 7.\nResult: (2a - 7)(2a + 7)"
+                },
+                {
+                    q: "Factor: 9m^2 - 1",
+                    a: "(3m - 1)(3m + 1)",
+                    solution: "This is a difference of squares.\nHere, a = 3m and b = 1.\nResult: (3m - 1)(3m + 1)"
+                },
+                {
+                    q: "Factor: x^4 - 16",
+                    a: "(x^2 - 4)(x^2 + 4) or (x - 2)(x + 2)(x^2 + 4)",
+                    solution: "This is a difference of squares: (x^2)^2 - 4^2.\nResult: (x^2 - 4)(x^2 + 4)\nNote: (x^2 - 4) is also a difference of squares (x - 2)(x + 2).\nSo, fully factored: (x - 2)(x + 2)(x^2 + 4)"
+                }
+            ]
+        ];
+
+        // --- GAME VARIABLES ---
+        let currentQuestion = null;
+        let currentQuestionBox = null;
+        let scores = {
+            player1: 0,
+            player2: 0 // Add more players (e.g., player3: 0)
+        };
+        let currentPlayer = 1; // Default to Player 1
+
+        // --- DOM ELEMENTS ---
+        const questionBoxes = document.querySelectorAll('.question-box');
+        const questionDisplay = document.getElementById('question-display');
+        const questionText = document.getElementById('question-text');
+        const answerInput = document.getElementById('answer-input');
+        const submitAnswerBtn = document.getElementById('submit-answer-btn');
+        const showSolutionBtn = document.getElementById('show-answer-btn'); // Renamed for clarity
+        const feedbackMessage = document.getElementById('feedback-message');
+        const solutionDisplay = document.getElementById('solution-display');
+        const closeQuestionBtn = document.getElementById('close-question-btn');
+        const score1Span = document.getElementById('score1');
+        const score2Span = document.getElementById('score2');
+        const playerSelectionButtons = {
+            1: document.getElementById('btn-player1'),
+            2: document.getElementById('btn-player2')
+            // Add more buttons here if you add more players
+        };
+
+
+        // --- FUNCTIONS ---
+
+        // Function to update scores on the display
+        function updateScores() {
+            score1Span.textContent = scores.player1;
+            score2Span.textContent = scores.player2;
+            // Update for other players (e.g., score3Span.textContent = scores.player3;)
+        }
+
+        // Function to set the current player and highlight their button
+        function setCurrentPlayer(playerNum) {
+            currentPlayer = playerNum;
+            // Remove active class from all player buttons
+            for (const key in playerSelectionButtons) {
+                if (playerSelectionButtons.hasOwnProperty(key)) {
+                    playerSelectionButtons[key].classList.remove('active');
+                }
+            }
+            // Add active class to the current player's button
+            if (playerSelectionButtons[playerNum]) {
+                playerSelectionButtons[playerNum].classList.add('active');
+            }
+        }
+
+        // Function to display a question
+        function showQuestion(categoryIndex, valueIndex, boxElement) {
+            currentQuestion = questions[categoryIndex][valueIndex];
+            currentQuestionBox = boxElement;
+
+            questionText.textContent = currentQuestion.q;
+            answerInput.value = ''; // Clear previous answer
+            feedbackMessage.style.display = 'none'; // Hide feedback
+            solutionDisplay.style.display = 'none'; // Hide solution
+            answerInput.disabled = false; // Enable input
+            submitAnswerBtn.disabled = false; // Enable submit button
+            showSolutionBtn.disabled = false; // Enable show solution button
+
+            questionDisplay.style.display = 'flex'; // Show the overlay
+        }
+
+        // Function to check the submitted answer
+        function checkAnswer() {
+            if (!currentQuestion) {
+                console.error("Error: No current question selected when trying to check answer.");
+                return;
+            }
+
+            const userAnswer = answerInput.value.trim().toLowerCase();
+            const correctAnswer = currentQuestion.a.trim().toLowerCase();
+            const questionValue = parseInt(currentQuestionBox.dataset.value);
+
+            // Simple check. For more complex math, you might need a parsing library
+            if (userAnswer === correctAnswer) {
+                feedbackMessage.textContent = 'Correct!';
+                feedbackMessage.style.color = '#28a745'; /* Green */
+                scores[`player${currentPlayer}`] += questionValue;
+                currentQuestionBox.classList.add('answered');
+                currentQuestionBox.style.cursor = 'not-allowed'; // Prevent re-clicking
+
+                // Disable input and submit after correct answer
+                answerInput.disabled = true;
+                submitAnswerBtn.disabled = true;
+                showSolutionBtn.disabled = true; // Disable show solution after answer
+            } else {
+                feedbackMessage.textContent = `Incorrect. The correct answer was: ${currentQuestion.a}`;
+                feedbackMessage.style.color = '#dc3545'; /* Red */
+                // Optionally deduct points for incorrect answers (Jeopardy style)
+                // scores[`player${currentPlayer}`] -= questionValue;
+
+                // Keep input and submit enabled if you want them to try again
+                // Or disable if you want them to just see the solution
+                answerInput.disabled = true; // Disable after one attempt
+                submitAnswerBtn.disabled = true;
+                showSolutionBtn.disabled = false; // Allow showing solution if incorrect
+            }
+            feedbackMessage.style.display = 'block';
+            solutionDisplay.textContent = currentQuestion.solution;
+            solutionDisplay.style.display = 'block';
+            updateScores();
+        }
+
+        // Function to show the correct answer/solution without checking input
+        function showSolution() {
+            if (!currentQuestion) {
+                console.error("Error: No current question selected when trying to show solution.");
+                return;
+            }
+
+            feedbackMessage.textContent = `The correct answer is: ${currentQuestion.a}`;
+            feedbackMessage.style.color = '#FFD700'; /* Gold */
+            feedbackMessage.style.display = 'block';
+            solutionDisplay.textContent = currentQuestion.solution;
+            solutionDisplay.style.display = 'block';
+
+            // Mark as answered regardless of trying again
+            currentQuestionBox.classList.add('answered');
+            currentQuestionBox.style.cursor = 'not-allowed';
+            answerInput.disabled = true; // Disable input
+            submitAnswerBtn.disabled = true; // Disable submit button
+            showSolutionBtn.disabled = true; // Disable show solution button after it's shown
+            // Do NOT close the question display immediately here. Let the user close it.
+        }
+
+        // Function to close the question display
+        function closeQuestion() {
+            questionDisplay.style.display = 'none';
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Add click listener to each question box
+        questionBoxes.forEach(box => {
+            box.addEventListener('click', () => {
+                if (!box.classList.contains('answered')) {
+                    const categoryIndex = parseInt(box.dataset.category);
+                    // Convert data-value (100, 200...) to array index (0, 1...)
+                    const valueIndex = (parseInt(box.dataset.value) / 100) - 1;
+                    showQuestion(categoryIndex, valueIndex, box);
+                }
+            });
+        });
+
+        submitAnswerBtn.addEventListener('click', checkAnswer);
+        showSolutionBtn.addEventListener('click', showSolution);
+        closeQuestionBtn.addEventListener('click', closeQuestion);
+
+        // Allow pressing Enter key to submit answer when input is focused
+        answerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !answerInput.disabled) {
+                checkAnswer();
+            }
+        });
+
+        // Initialize scores and set default player on load
+        updateScores();
+        setCurrentPlayer(1); // Set Player 1 as active initially
+
+        // Initially disable the submit and show solution buttons until a question is selected
+        submitAnswerBtn.disabled = true;
+        showSolutionBtn.disabled = true;
+    </script>
+</body>
+</html>

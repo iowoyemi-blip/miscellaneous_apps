@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Exponent Escape Room — Sequential Rooms</title>
+<style>
+  :root{ --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#7c3aed; --good:#16a34a; --bad:#dc2626; --warn:#f59e0b; --ok:#22c55e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(135deg,#0b1226,#0e1630 40%,#0d1b2a);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:980px;margin:auto;padding:24px}
+  .card{background:rgba(17,24,39,.85);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:22px;box-shadow:0 10px 25px rgba(0,0,0,.35)}
+  h1{font-size:clamp(24px,3vw,34px);margin:0 0 8px}
+  .sub{color:var(--muted);margin:0 0 16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  input{background:#0b1020;color:var(--ink);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;font-size:16px;outline:none}
+  .btn{cursor:pointer;border:0;border-radius:12px;padding:10px 16px;font-weight:700;letter-spacing:.3px}
+  .btn.primary{background:var(--accent);color:white}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--ink)}
+  .locks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  .lock{background:#0b1020;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .12s, box-shadow .12s}
+  .lock:hover{transform:translateY(-2px);box-shadow:0 10px 15px rgba(0,0,0,.25)}
+  .lock .name{font-weight:900}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#0b1020;border:1px solid rgba(255,255,255,.12);color:var(--muted);font-weight:800;font-size:12px}
+  .badge.ok{color:#86efac;border-color:rgba(34,197,94,.5)}
+  .grid{display:grid;grid-template-columns:repeat(2, minmax(260px,1fr));gap:12px;margin-top:10px}
+  .q{background:#0c1328;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px}
+  .q .prompt{font-weight:800;text-align:center;margin:4px 0 10px;font-size:18px}
+  .choice{display:block;width:100%;text-align:center;background:#0b1020;border:1px solid rgba(255,255,255,.08);color:var(--ink);border-radius:10px;padding:10px;font-weight:700;cursor:pointer;margin:6px 0;transition:.12s background,.12s transform}
+  .choice.correct{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+  .choice.wrong{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
+  .panel{margin-top:16px;display:none}
+  .codebox{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .digits{display:flex;gap:8px}
+  .digit{width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-weight:900;background:#0b1020}
+  .open{background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.35)}
+  .math sup{font-size:.6em}
+  .note{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="screen-start" class="card">
+    <h1>Exponent Escape Room — Sequential Rooms</h1>
+    <p class="sub">Open each room in order by answering correctly. Code rule: <b>for each simplified answer, add the absolute values of all exponents on variables (numerator & denominator), then use the last digit</b>. Examples: <i>x^3y^2 → 5</i>, <i>1/(2x^5) → 5</i>, <i>5y^7/(2x^5) → 7+5 = 12 → 2</i>.</p>
+    <div class="row">
+      <label>Player name <input id="player" placeholder="e.g., Jordan A." autocomplete="off"></label>
+      <label style="display:flex;align-items:center;gap:8px"><input id="shuffle" type="checkbox" checked> Shuffle answer choices</label>
+    </div>
+    <button class="btn primary" id="start">Enter Room 1</button>
+  </div>
+
+  <div id="screen-game" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <div class="badge">Player: <span id="who">Player</span></div>
+      <div class="badge">Rooms opened: <span id="count">0/4</span></div>
+      <div class="badge">Attempts: <span id="tries">0</span></div>
+    </div>
+    <div class="locks" id="locks"></div>
+
+    <div id="panel" class="panel">
+      <h3 id="lname" style="margin:6px 0 6px">Room</h3>
+      <div class="grid" id="grid"></div>
+      <div class="codebox">
+        <div class="digits" id="digits"></div>
+        <button class="btn primary" id="tryOpen" disabled>Try Code</button>
+        <span class="badge" id="msg"></span>
+      </div>
+      <p class="note">Digits update as you answer. Correct answers turn green; wrong turns red. When the code matches, the room opens.</p>
+    </div>
+  </div>
+
+  <div id="screen-done" class="card" style="display:none">
+    <h1>Escaped! 🎉</h1>
+    <p class="sub">Great work, <b id="finName"></b> — you opened all rooms.</p>
+    <div class="row">
+      <div class="badge">Attempts: <span id="finTries"></span></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn primary" id="again">Play Again</button>
+      <button class="btn ghost" id="csv">Export CSV</button>
+      <button class="btn ghost" id="json">Export JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+(function(){
+  const DATA = {"BANK": [{"prompt": "(-5)^2", "correct": "25", "choices": ["-25", "50", "((-5)^2)"]}, {"prompt": "(-4)^3", "correct": "-64", "choices": ["64", "-128", "((-4)^3)"]}, {"prompt": "(-6)^4", "correct": "1296", "choices": ["-1296", "2592", "((-6)^4)"]}, {"prompt": "(-7)^2", "correct": "49", "choices": ["-49", "98", "((-7)^2)"]}, {"prompt": "-3^2", "correct": "-9", "choices": ["9", "-18", "(-3^2)"]}, {"prompt": "-5^3", "correct": "-125", "choices": ["125", "-250", "(-5^3)"]}, {"prompt": "-6^4", "correct": "-1296", "choices": ["1296", "-2592", "(-6^4)"]}, {"prompt": "-2^5", "correct": "-32", "choices": ["32", "-64", "(-2^5)"]}, {"prompt": "(-1)^21", "correct": "-1", "choices": ["1", "-2", "((-1)^21)"]}, {"prompt": "(-1)^50", "correct": "1", "choices": ["-1", "2", "((-1)^50)"]}, {"prompt": "(-1)^77", "correct": "-1", "choices": ["1", "-2", "((-1)^77)"]}, {"prompt": "(-1)^100", "correct": "1", "choices": ["-1", "2", "((-1)^100)"]}, {"prompt": "(-1)^18", "correct": "1", "choices": ["-1", "2", "((-1)^18)"]}, {"prompt": "(-1)^43", "correct": "-1", "choices": ["1", "-2", "((-1)^43)"]}, {"prompt": "(-1)^64", "correct": "1", "choices": ["-1", "2", "((-1)^64)"]}, {"prompt": "(-1)^99", "correct": "-1", "choices": ["1", "-2", "((-1)^99)"]}, {"prompt": "6x^3 \u00b7 2x^7", "correct": "12x^10", "choices": ["12x^9", "6x^10", "24x^11"]}, {"prompt": "3x^5 \u00b7 9x^4", "correct": "27x^9", "choices": ["27x^8", "13x^9", "54x^10"]}, {"prompt": "8x^2 \u00b7 7x^6", "correct": "56x^8", "choices": ["56x^7", "28x^8", "112x^9"]}, {"prompt": "5x^4 \u00b7 10x^5", "correct": "50x^9", "choices": ["50x^8", "25x^9", "100x^10"]}, {"prompt": "(24x^9y^8)/(6x^5y^2)", "correct": "4x^4y^6", "choices": ["8x^4y^6", "((24x^9y^8)/(6x^5y^2))", "((24x^9y^8)/(6x^5y^2))"]}, {"prompt": "(18x^10y^6)/(9x^4y^3)", "correct": "2x^6y^3", "choices": ["4x^6y^3", "((18x^10y^6)/(9x^4y^3))", "((18x^10y^6)/(9x^4y^3))"]}, {"prompt": "(40x^7y^9)/(10x^2y^4)", "correct": "4x^5y^5", "choices": ["8x^5y^5", "((40x^7y^9)/(10x^2y^4))", "((40x^7y^9)/(10x^2y^4))"]}, {"prompt": "(16x^6y^12)/(8x^3y^5)", "correct": "2x^3y^7", "choices": ["4x^3y^7", "((16x^6y^12)/(8x^3y^5))", "((16x^6y^12)/(8x^3y^5))"]}, {"prompt": "(2x^3y^4)^2", "correct": "4x^6y^8", "choices": ["2x^6y^8", "8x^6y^8", "((2x^3y^4)^2)"]}, {"prompt": "(4x^2y^3)^3", "correct": "64x^6y^9", "choices": ["32x^6y^9", "128x^6y^9", "((4x^2y^3)^3)"]}, {"prompt": "(5x^4y^2)^2", "correct": "25x^8y^4", "choices": ["12x^8y^4", "50x^8y^4", "((5x^4y^2)^2)"]}, {"prompt": "(6x^3y^5)^2", "correct": "36x^6y^10", "choices": ["18x^6y^10", "72x^6y^10", "((6x^3y^5)^2)"]}, {"prompt": "((-3xy^4 \u00b7 x^3y)/(x^2y^3)^2)^2", "correct": "9/y^2", "choices": ["1/9/y^2", "1/y^2", "9/y^3"]}, {"prompt": "((-4x^2y^5)/(2x^3y^2)^2)^2", "correct": "y^2/x^8", "choices": ["1/y^2/x^8", "y^3/x^8", "(((-4x^2y^5)/(2x^3y^2)^2)^2)"]}, {"prompt": "((-6xy^6 \u00b7 x^2)/(3x^2y^4)^2)^2", "correct": "4/(9x^2y^4)", "choices": ["1/4/(9x^2y^4)", "4/(9x^3y^4)", "(((-6xy^6 \u00b7 x^2)/(3x^2y^4)^2)^2)"]}, {"prompt": "((-8x^3y^2)/(4x^2y^3)^2)^2", "correct": "1/(4x^2y^8)", "choices": ["(4x^2y^8)", "9/(4x^2y^8)", "1/(4x^3y^8)"]}], "LOCKS": [{"name": "Room 1", "indices": [0, 1, 2, 3, 4, 5, 6, 7]}, {"name": "Room 2", "indices": [8, 9, 10, 11, 12, 13, 14, 15]}, {"name": "Room 3", "indices": [16, 17, 18, 19, 20, 21, 22, 23]}, {"name": "Room 4", "indices": [24, 25, 26, 27, 28, 29, 30, 31]}], "TITLE": "Exponent Escape Room \u2014 Sequential Rooms"};
+
+  const $ = s=>document.querySelector(s);
+  const el = id=>document.getElementById(id);
+  const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+
+  // Sounds
+  const snd = (()=>{
+    let ctx; const safe = fn=>{ try{ fn(); }catch(e){} };
+    function beep(type="sine", freq=880, dur=0.12, vol=0.06){
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext||function(){})();
+      if(typeof ctx === 'function') return;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.value = freq; g.gain.value = vol;
+      o.connect(g); g.connect(ctx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur); o.stop(ctx.currentTime + dur);
+    }
+    return {
+      correct(){ safe(()=>{beep("triangle",880,.11,.06); setTimeout(()=>beep("triangle",1320,.12,.05),90)}); },
+      wrong(){ safe(()=>beep("sawtooth",180,.18,.06)); },
+      open(){ safe(()=>{beep("triangle",660,.1,.06); setTimeout(()=>beep("triangle",990,.1,.06),100); setTimeout(()=>beep("triangle",1320,.12,.06),200)}); },
+      end(){ safe(()=>beep("square",660,.22,.06)); }
+    };
+  })();
+
+  // Render math (^exp and middot)
+  function m(txt){
+    let s = String(txt);
+    s = s.replace(/\^(\-?\d+)/g, (_,e)=>`<sup>${e}</sup>`);
+    s = s.replace(/·/g,'&middot;').replace(/−/g,'-');
+    return s;
+  }
+
+  // Digit from answer: sum of absolute exponents on variables (numerator & denominator), last digit
+  function digitFromAnswer(ans){
+    const s = String(ans).replace(/\s+/g,'').replace(/−/g,'-');
+    const re = /([a-zA-Z])(?:\^(-?\d+))?/g;
+    let sum = 0, m;
+    while((m = re.exec(s))){
+      const exp = m[2] ? Math.abs(parseInt(m[2],10)) : 1;
+      sum += exp;
+    }
+    const str = String(sum);
+    return str[str.length-1] || '0';
+  }
+
+  const S = {
+    start: el('screen-start'),
+    game: el('screen-game'),
+    done: el('screen-done'),
+    player: el('player'),
+    shuffle: el('shuffle'),
+    who: el('who'),
+    count: el('count'),
+    tries: el('tries'),
+    locks: el('locks'),
+    panel: el('panel'),
+    lname: el('lname'),
+    grid: el('grid'),
+    digits: el('digits'),
+    tryOpen: el('tryOpen'),
+    msg: el('msg'),
+    finName: el('finName'),
+    finTries: el('finTries'),
+  };
+
+  let tries = 0;
+  let opened = DATA.LOCKS.map(()=>false);
+  let currentLock = 0;
+  let answers = {}; // lockIndex -> {qid->choice}
+  let targets = DATA.LOCKS.map(L => L.indices.map(id => digitFromAnswer(DATA.BANK[id].correct)).join(''));
+
+  el('start').addEventListener('click', ()=>{
+    S.start.style.display='none'; S.game.style.display='block';
+    S.who.textContent = S.player.value || 'Player';
+    renderLocks();
+    openLock(0);
+  });
+
+  el('again').addEventListener('click', ()=>location.reload());
+
+  function renderLocks(){
+    S.locks.innerHTML = '';
+    DATA.LOCKS.forEach((L, idx)=>{
+      const need = L.indices.length;
+      const card = document.createElement('div');
+      card.className = 'lock' + (opened[idx]?' open':'');
+      card.innerHTML = `
+        <div class="name">${L.name}</div>
+        <div class="badge ${opened[idx]?'ok':''}">${opened[idx]?'Opened':'Locked'}</div>
+        <div class="note">Target: ${need} digit${need>1?'s':''}</div>`;
+      card.addEventListener('click', ()=> openLock(idx));
+      S.locks.appendChild(card);
+    });
+    S.count.textContent = opened.filter(Boolean).length + '/' + DATA.LOCKS.length;
+  }
+
+  function buildDigitsView(code, need){
+    S.digits.innerHTML = '';
+    const chars = code.split('');
+    for(let i=0;i<need;i++){
+      const d = document.createElement('div');
+      d.className = 'digit';
+      d.textContent = chars[i] || '•';
+      S.digits.appendChild(d);
+    }
+  }
+
+  function openLock(idx){
+    currentLock = idx;
+    const L = DATA.LOCKS[idx];
+    // Only allow opening next lock after previous is opened
+    const prevIdx = idx-1;
+    if(prevIdx >=0 && !opened[prevIdx]){
+      S.msg.textContent = "Open the previous room first.";
+      return;
+    }
+    S.panel.style.display = 'block';
+    S.lname.textContent = `${L.name} — answer all ${L.indices.length}`;
+    S.grid.innerHTML = '';
+    S.msg.textContent = '';
+    const qids = L.indices;
+    const show = qids.map(id => Object.assign({id}, DATA.BANK[id]));
+    show.forEach((q)=>{
+      const card = document.createElement('div'); card.className='q';
+      const opts = (S.shuffle.checked ? shuffle([q.correct, ...q.choices]) : [q.correct, ...q.choices]).slice(0,4);
+      card.innerHTML = `<div class="prompt math">${m(q.prompt)}</div><div class="choices"></div>`;
+      const choicesDiv = card.querySelector('.choices');
+      opts.forEach(opt=>{
+        const b = document.createElement('button');
+        b.className = 'choice'; b.dataset.raw = opt; b.innerHTML = m(opt);
+        b.addEventListener('click', ()=> pick(b, q, opt));
+        choicesDiv.appendChild(b);
+      });
+      S.grid.appendChild(card);
+    });
+    updateDigits();
+    S.tryOpen.disabled = true;
+  }
+
+  function pick(btn, q, opt){
+    const correct = (opt === q.correct);
+    btn.classList.remove('wrong','correct');
+    if(correct){ btn.classList.add('correct'); snd.correct(); }
+    else { btn.classList.add('wrong'); snd.wrong(); }
+    if(correct){
+      [...btn.parentElement.children].forEach(el=>{ el.disabled = true; if(el!==btn) el.classList.add('wrong'); });
+      answers[currentLock] = answers[currentLock] || {};
+      answers[currentLock][q.id] = opt;
+      updateDigits();
+      checkReady();
+    }else{
+      tries += 1; S.tries.textContent = String(tries);
+    }
+  }
+
+  function updateDigits(){
+    const L = DATA.LOCKS[currentLock];
+    const need = L.indices.length;
+    const code = L.indices.map(id => {
+      const chosen = answers[currentLock] && answers[currentLock][id];
+      return chosen ? digitFromAnswer(chosen) : '';
+    }).join('');
+    buildDigitsView(code, need);
+  }
+
+  function checkReady(){
+    const L = DATA.LOCKS[currentLock];
+    const haveAll = L.indices.every(id => answers[currentLock] && answers[currentLock][id]);
+    S.tryOpen.disabled = !haveAll;
+  }
+
+  S.tryOpen.addEventListener('click', ()=>{
+    const L = DATA.LOCKS[currentLock];
+    const need = L.indices.length;
+    const code = L.indices.map(id => digitFromAnswer(answers[currentLock][id])).join('');
+    const target = targets[currentLock];
+    if(code === target){
+      opened[currentLock] = true;
+      renderLocks();
+      S.msg.textContent = "Unlocked! Proceed to the next room.";
+      S.msg.classList.add('ok');
+      snd.open();
+      const next = opened.indexOf(false);
+      if(next === -1){
+        S.game.style.display = 'none'; S.done.style.display = 'block'; snd.end();
+        el('finName').textContent = S.player.value || 'Player';
+        el('finTries').textContent = String(tries);
+      }else{
+        openLock(next);
+      }
+    }else{
+      tries += 1; S.tries.textContent = String(tries);
+      S.msg.textContent = "Wrong code — keep checking.";
+      S.msg.classList.remove('ok');
+      snd.wrong();
+    }
+  });
+
+  function download(data, name, type){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data],{type}));
+    a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+  function exportCSV(){
+    const rows = [["Player","Attempts","Locks Opened","Lock","Code Entered","Correct Code"]];
+    DATA.LOCKS.forEach((L, idx)=>{
+      const code = (answers[idx]? L.indices.map(id => digitFromAnswer(answers[idx][id]||"")).join('') : "");
+      rows.push([S.player.value||"Player", tries, opened.filter(Boolean).length, L.name, code, targets[idx]]);
+    });
+    const csv = rows.map(r=>r.map(v=>String(v).includes(',')?`"${String(v).replace(/"/g,'""')}"`:v).join(',')).join('\\n');
+    download(csv, `escape_exponents_results_${Date.now()}.csv`, "text/csv");
+  }
+  function exportJSON(){
+    const payload = {
+      player: S.player.value || "Player",
+      attempts: tries,
+      opened: opened,
+      locks: DATA.LOCKS.map((L,idx)=>({ name:L.name, entered: (answers[idx]? L.indices.map(id => digitFromAnswer(answers[idx][id]||"")).join('') : null), target: targets[idx] }))
+    };
+    download(JSON.stringify(payload,null,2), `escape_exponents_results_${Date.now()}.json`, "application/json");
+  }
+  document.getElementById('csv').addEventListener('click', exportCSV);
+  document.getElementById('json').addEventListener('click', exportJSON);
+})();
+
+</script>
+</body>
+</html>

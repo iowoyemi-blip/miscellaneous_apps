@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Balance Beam Equations</title>
+<style>
+  :root{
+    --bg:#e9ecf1; --ink:#1e2a3a; --muted:#6a7a90; --wood:#c58e52; --wood-dark:#9a6b3a;
+    --cube:#bfc7ff; --cube-dark:#9097d0; --neg:#ffb3b3; --neg-dark:#d46a6a;
+    --accent:#3b82f6; --good:#16a34a; --warn:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    background: radial-gradient(1200px 800px at 60% -200px, #fff, var(--bg)); color:var(--ink);
+  }
+  header{padding:16px clamp(16px,3vw,32px);display:flex;gap:16px;align-items:center;justify-content:space-between;
+    border-bottom:1px solid #d9dee7;background:#fff8;backdrop-filter:blur(6px);position:sticky;top:0;z-index:3}
+  h1{font-size:clamp(18px,2.8vw,24px);margin:0;font-weight:700}
+  #equation{font-size:clamp(22px,4.6vw,40px);font-weight:800;letter-spacing:.5px}
+  .pill{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid #d6dbe5;color:var(--muted);font-weight:600}
+  main{max-width:1100px;margin:0 auto;padding:20px 16px 90px}
+  .translation{margin:8px auto 14px;max-width:980px;text-align:center;font-weight:900;
+    font-size:clamp(18px,3.6vw,30px);letter-spacing:.3px}
+  .bin-row{display:flex;justify-content:center;gap:24px;align-items:center;margin:6px 0 16px;user-select:none;flex-wrap:wrap}
+  .bin{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 14px;border:2px dashed #cdd5e1;border-radius:16px;background:#fff;min-width:140px}
+  .bin h3{margin:0;color:var(--muted);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .prototype{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .cube{
+    width:46px;height:32px;border-radius:6px;background:linear-gradient(145deg,var(--cube),#e5e8ff);
+    border:2px solid var(--cube-dark); box-shadow:0 3px 0 0 var(--cube-dark), 0 8px 16px #38426a1a;
+    color:#1b2250;display:grid;place-items:center;font-weight:900;cursor:grab;user-select:none;
+  }
+  .cube.neg{background:linear-gradient(145deg,var(--neg),#ffd7d7);border-color:var(--neg-dark);color:#6b1111}
+  .cube[data-type="x"]{background:linear-gradient(145deg,#c9ddff,#eef6ff);border-color:#7ba2e6}
+  .cube.small{transform:scale(.9)}
+
+  .workspace{margin-top:8px;display:grid;place-items:center;position:relative}
+  .beam-wrapper{width:min(980px,94vw);aspect-ratio:3.2/1;position:relative}
+  .pivot{position:absolute;left:50%;bottom:42px;transform:translateX(-50%);width:120px;height:70px;
+    background:linear-gradient(#d9a468,#b1793e);clip-path:polygon(14% 100%, 50% 0, 86% 100%);box-shadow: inset 0 0 0 2px #885a2a80}
+  .beam{position:absolute;left:50%;bottom:100px;transform:translateX(-50%) rotate(0deg);transform-origin:50% 50%;
+    width:92%;height:24px;background:linear-gradient(#e9ba7e,#c58e52);border:2px solid var(--wood-dark);
+    border-radius:8px;box-shadow:0 14px 18px #3b2a1a23}
+  .pan{position:absolute;bottom:120px;width:34%;height:22px;background:linear-gradient(#efc18a,#c58e52);
+    border:2px solid var(--wood-dark);border-radius:8px;display:flex;justify-content:center;align-items:flex-end;padding:8px;gap:18px}
+  .pan::after{content:"";position:absolute;top:-26px;left:50%;transform:translateX(-50%);width:58%;height:10px;border-radius:8px;
+    background:linear-gradient(#f8d4a5,#d59a5a);border:2px solid var(--wood-dark)}
+  .pan.left{left:3%} .pan.right{right:3%}
+
+  /* Compact multi-group stacking (group size = 5) */
+  .stack{position:relative;display:flex;align-items:flex-end;gap:14px;height:220px;min-width:60px;justify-content:center}
+  .stack-label{position:absolute;top:-40px;font-size:12px;font-weight:800;color:#7a5a42;text-transform:uppercase;letter-spacing:.08em}
+  .col{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;max-width:320px;width:48%;height:100%}
+  .group{display:flex;flex-direction:column-reverse;gap:6px;align-items:center}
+
+  .drop-hover{outline:3px dashed #60a5fa;outline-offset:8px}
+
+  .controls{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  button{appearance:none;border:0;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #cdd6e2;
+    font-weight:700;color:#1b2942;cursor:pointer;box-shadow:0 2px 0 #b8c2d2}
+  button:hover{border-color:#9bb0ce} button:disabled{opacity:.45;cursor:not-allowed}
+  .cta{background:linear-gradient(#e8f0ff,#d7e6ff);border-color:#9ab6ff}
+  .good{background:linear-gradient(#dffbe7,#b9f0c6);border-color:#7be0a0}
+  .danger{background:linear-gradient(#ffe2e2,#ffd2d2);border-color:#ff9f9f}
+  .sm{font-size:12px;padding:6px 10px;border-radius:10px}
+
+  .board{margin:12px auto 0;max-width:980px;text-align:center;color:#374151;font-weight:700}
+
+  .float-tools{position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px;z-index:4}
+  .trash, .undo, .redo{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:#fff;border:2px solid #d1d8e6;
+    box-shadow:0 8px 24px #2a325511;color:#9aa9c4;font-size:26px;font-weight:900;user-select:none}
+  .trash.drop-hover{border-color:#ef4444;background:#ffecec;color:#ef4444}
+
+  .tag{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2f9;color:#53607a;font-weight:800;margin-left:6px}
+  .counts{font-size:12px;color:#5a6a85}
+  .hidden{display:none !important}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:#101827;color:#fff;
+    padding:10px 14px;border-radius:12px;box-shadow:0 10px 28px #10182744;font-weight:700;z-index:5}
+
+  /* Solve panel inputs */
+  .solve-panel{display:grid;gap:10px;min-width:min(760px,98vw)}
+  .solve-row{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+  .solve-row label{font-weight:900;color:#111827}
+  .seg{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid #cfd7e6;border-radius:10px;background:#fff}
+  .seg input[type="number"]{width:72px;padding:6px;border:1px solid #d4ddeb;border-radius:8px}
+  .hint{font-size:12px;color:#6b7280;margin-top:4px;text-align:center}
+  .level-pill{font-weight:900;color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;border-radius:999px;padding:4px 8px}
+
+  /* Log & Share */
+  .panel-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px;margin:16px auto 0}
+  @media (max-width: 960px){ .panel-wrap{grid-template-columns:1fr} }
+  .card{background:#fff;border:1px solid #dfe6f2;border-radius:14px;padding:12px 12px 14px;box-shadow:0 8px 24px #1018270a}
+  .card h3{margin:0 0 8px;font-size:16px;color:#111827}
+  .loglist{height:220px;overflow:auto;border:1px dashed #d6deec;border-radius:10px;padding:8px;background:#f8fbff}
+  .loglist .row{font-size:13px;padding:4px 0;border-bottom:1px dashed #e6eefb}
+  .loglist .row:last-child{border-bottom:none}
+  .logbtns, .sharebtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  textarea.embed{width:100%;min-height:90px;border:1px solid #d4ddeb;border-radius:10px;padding:8px}
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="pill">Drag blocks to model the equation. Then solve using equal operations.</div>
+      <h1 id="equation">2x + 1 = 7</h1>
+      <div class="translation" id="translation">Left: 0x + 0 = Right: 0x + 0</div>
+    </div>
+    <div>
+      <div class="counts" id="counts"></div>
+      <div class="level-pill" id="levelPill">Level 1 of 4</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="bin-row" aria-label="Bins">
+      <div class="bin" aria-label="Positive bin">
+        <h3>Positives</h3>
+        <div class="prototype">
+          <div class="cube" draggable="true" data-type="x">X</div>
+          <div class="cube" draggable="true" data-type="one">1</div>
+          <div class="cube small" draggable="true" data-type="x">X</div>
+          <div class="cube small" draggable="true" data-type="one">1</div>
+        </div>
+      </div>
+      <div class="bin" aria-label="Negatives bin">
+        <h3>Negatives</h3>
+        <div class="prototype">
+          <div class="cube neg" draggable="true" data-type="nx">−X</div>
+          <div class="cube neg" draggable="true" data-type="n1">−1</div>
+          <div class="cube neg small" draggable="true" data-type="nx">−X</div>
+          <div class="cube neg small" draggable="true" data-type="n1">−1</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Balance workspace">
+      <div class="beam-wrapper" id="beamWrapper">
+        <div class="beam" id="beam"></div>
+
+        <div class="pan left" id="pan-left" aria-label="Left pan" data-side="left">
+          <div class="stack-label">Left</div>
+          <div class="stack">
+            <div class="col" id="left-x"></div>
+            <div class="col" id="left-one"></div>
+          </div>
+        </div>
+
+        <div class="pan right" id="pan-right" aria-label="Right pan" data-side="right">
+          <div class="stack-label">Right</div>
+          <div class="stack">
+            <div class="col" id="right-x"></div>
+            <div class="col" id="right-one"></div>
+          </div>
+        </div>
+
+        <div class="pivot"></div>
+      </div>
+    </section>
+
+    <section class="controls" id="controls-model">
+      <button class="cta" id="btn-check">Check Model</button>
+      <button id="btn-clear">Clear</button>
+      <button id="btn-create">Create Problem</button>
+      <button id="btn-new" class="sm">New Problem</button>
+    </section>
+
+    <!-- Student-driven solve controls -->
+    <section class="controls hidden" id="controls-solve">
+      <div class="solve-panel">
+        <div class="solve-row">
+          <label>Add</label>
+          <div class="seg">X: <input type="number" id="addX" min="0" value="0"> 1: <input type="number" id="add1" min="0" value="0"></div>
+          <button class="good" id="btnAddOk">OK</button>
+        </div>
+        <div class="solve-row">
+          <label>Add negatives</label>
+          <div class="seg">−X: <input type="number" id="addNX" min="0" value="0"> −1: <input type="number" id="addN1" min="0" value="0"></div>
+          <button class="good" id="btnAddNegOk">OK</button>
+        </div>
+        <div class="solve-row">
+          <label>Subtract</label>
+          <div class="seg">X: <input type="number" id="subX" min="0" value="0"> 1: <input type="number" id="sub1" min="0" value="0"></div>
+          <button class="good" id="btnSubOk">OK</button>
+        </div>
+        <div class="solve-row">
+          <label>Multiply both sides by</label>
+          <div class="seg"><input type="number" id="mulK" min="2" value="2"></div>
+          <button class="cta" id="btnMulOk">OK</button>
+        </div>
+        <div class="solve-row">
+          <label>Divide both sides by</label>
+          <div class="seg"><input type="number" id="divK" min="2" value="2"></div>
+          <button class="cta" id="btnDivOk">OK</button>
+        </div>
+        <div class="hint" id="hint">Hint: move all X’s to one side, numbers to the other; clear common factors last. For fraction problems, modeling an LCM-scaled version is OK.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+        <button id="btn-back" class="sm">Back to Model</button>
+        <button id="btn-new2" class="sm">New Problem</button>
+      </div>
+    </section>
+
+    <!-- Log & Share -->
+    <section class="panel-wrap">
+      <div class="card">
+        <h3>Action Log</h3>
+        <div id="logList" class="loglist" aria-live="polite"></div>
+        <div class="logbtns">
+          <button id="btnCopyLog">Copy Log</button>
+          <button id="btnDownloadLog">Download Log</button>
+          <button id="btnClearLog">Clear Log</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Save & Share</h3>
+        <div class="sharebtns">
+          <button id="btnShareLink">Copy Share Link</button>
+          <button id="btnSaveJSON">Download Save</button>
+          <button id="btnLoadJSON">Upload Save</button>
+          <input type="file" id="fileLoad" class="hidden" accept=".json,application/json" />
+          <button id="btnEmbed">Copy Embed Code</button>
+        </div>
+        <div style="margin-top:10px">
+          <textarea id="embedBox" class="embed" placeholder="Embed code will appear here when you click 'Copy Embed Code'"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="board" id="board">Tip: drag blocks from the bins to the pans. Drag a block into the trash to remove it. Use “Check Model” when you think it matches the equation.</div>
+  </main>
+
+  <div class="float-tools">
+    <div class="undo" id="btn-undo" title="Undo (⌘/Ctrl+Z)">↶</div>
+    <div class="redo" id="btn-redo" title="Redo (Shift+⌘/Ctrl+Z or Ctrl+Y)">↷</div>
+    <div class="trash" id="trash" title="Drag here to delete">🗑</div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+<script>
+(function(){
+  const MAX_PER_GROUP = 5;
+  const LEVELS = 4;
+
+  const $ = sel => document.querySelector(sel);
+
+  const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+  const lcm=(a,b)=>Math.abs(a*b)/gcd(a,b);
+  const rat=(n,d=1)=>{const g=gcd(n,d); const s=(d<0?-1:1); return {n: Math.trunc(s*n/g), d: Math.trunc(Math.abs(d)/g)};}
+  const ratStr=r=> r.d===1?`${r.n}`:`${r.n}/${r.d}`;
+
+  let level = 1;
+  let lastOutcome = 'ongoing';
+
+  const state = {
+    mode: 'model',
+    eq: {a:rat(2), b:rat(1), c:rat(0), d:rat(7), lcm:1, sol:3},
+    left: {x:0, nx:0, one:0, n1:0},
+    right:{x:0, nx:0, one:0, n1:0},
+    undoStack:[], redoStack:[],
+    log:[]
+  };
+
+  const el = {
+    equation: $('#equation'),
+    translation: $('#translation'),
+    levelPill: $('#levelPill'),
+    counts: $('#counts'),
+    stacks: {
+      left: { x: $('#left-x'), one: $('#left-one') },
+      right:{ x: $('#right-x'), one: $('#right-one') }
+    },
+    beam: $('#beam'),
+    trash: $('#trash'),
+    board: $('#board'),
+    toast: $('#toast'),
+    // model controls
+    check: $('#btn-check'),
+    clear: $('#btn-clear'),
+    create: $('#btn-create'),
+    new1: $('#btn-new'),
+    // solve controls
+    ctrModel: $('#controls-model'),
+    ctrSolve: $('#controls-solve'),
+    back: $('#btn-back'),
+    new2: $('#btn-new2'),
+    // inputs
+    addX: $('#addX'), add1: $('#add1'), btnAddOk: $('#btnAddOk'),
+    addNX: $('#addNX'), addN1: $('#addN1'), btnAddNegOk: $('#btnAddNegOk'),
+    subX: $('#subX'), sub1: $('#sub1'), btnSubOk: $('#btnSubOk'),
+    mulK: $('#mulK'), btnMulOk: $('#btnMulOk'),
+    divK: $('#divK'), btnDivOk: $('#btnDivOk'),
+    // history
+    undo: $('#btn-undo'), redo: $('#btn-redo'),
+    // log/share
+    logList: $('#logList'),
+    btnCopyLog: $('#btnCopyLog'), btnDownloadLog: $('#btnDownloadLog'), btnClearLog: $('#btnClearLog'),
+    btnShareLink: $('#btnShareLink'), btnSaveJSON: $('#btnSaveJSON'),
+    btnLoadJSON: $('#btnLoadJSON'), fileLoad: $('#fileLoad'),
+    btnEmbed: $('#btnEmbed'), embedBox: $('#embedBox'),
+    hint: $('#hint')
+  };
+
+  /* ---------- Helpers ---------- */
+  const now = ()=> new Date().toLocaleTimeString();
+  const leftNet = ()=> ({x: state.left.x - state.left.nx, one: state.left.one - state.left.n1});
+  const rightNet= ()=> ({x: state.right.x - state.right.nx, one: state.right.one - state.right.n1});
+  const transStr = ()=> {
+    const L = leftNet(), R = rightNet();
+    const t = (c, sym)=> c===0?'':(c===1 && sym==='x'?'x':c===-1 && sym==='x'?'-x':`${c}${sym==='x'?'x':''}`);
+    const leftS  = [t(L.x,'x'), L.one===0?'':(L.one>0?`+ ${L.one}`:`- ${Math.abs(L.one)}`)].filter(Boolean).join(' ').trim() || '0';
+    const rightS = [t(R.x,'x'), R.one===0?'':(R.one>0?`+ ${R.one}`:`- ${Math.abs(R.one)}`)].filter(Boolean).join(' ').trim() || '0';
+    return `${leftS} = ${rightS}`;
+  };
+  const addLog=(txt)=>{
+    state.log.push(`[${now()}] ${txt} | Now: ${transStr()}`);
+    const row = document.createElement('div');
+    row.className='row';
+    row.textContent = state.log[state.log.length-1];
+    el.logList.appendChild(row);
+    el.logList.scrollTop = el.logList.scrollHeight;
+  };
+
+  /* ---------- Equation display ---------- */
+  function fmtTermR(r, sym){
+    if(r.n===0) return '';
+    const s = ratStr(r);
+    if(sym==='x') return (s==='1'?'':(s==='-1'?'-':s))+ 'x';
+    const sign = r.n>0?'+ ':'- ';
+    return sign + ratStr(rat(Math.abs(r.n), r.d));
+  }
+  function updateEquationText(){
+    const {a,b,c,d,lcm} = state.eq;
+    const leftS  = [ fmtTermR(a,'x'), fmtTermR(b,'n') ].join(' ').replace(/\s+/g,' ').trim() || '0';
+    const rightS = [ fmtTermR(c,'x'), fmtTermR(d,'n') ].join(' ').replace(/\s+/g,' ').trim() || '0';
+    el.equation.textContent = `${leftS} = ${rightS}`;
+    if(lcm>1){
+      el.hint.textContent = `Fractions present. Modeling an LCM-scaled version (LCM=${lcm}) is OK; divide later.`;
+    } else el.hint.textContent = `Hint: move X’s to one side, numbers to the other; clear common factors last.`;
+  }
+
+  /* ---------- Level generation ---------- */
+  const sampleInt=(lo,hi)=> Math.floor(Math.random()*(hi-lo+1))+lo;
+  function setEqRats(a,b,c,d,guess,L){
+    state.eq = {a,b,c,d,lcm:L, sol:guess};
+    resetWorkspace();
+    updateLevelPill();
+  }
+  const setEqInts=(a,b,c,d,guess)=> setEqRats(rat(a),rat(b),rat(c),rat(d),guess,1);
+
+  function genLevel1(){
+    const x = sampleInt(0,8);
+    const a = sampleInt(1,5), b = sampleInt(0,8);
+    const c = 0, d = a*x + b;
+    setEqInts(a,b,c,d,x);
+    addLog(`New problem (Level 1): ${a}x ${b?'+ '+b:''} = ${d}`);
+  }
+  function genLevel2(){
+    const mode = Math.random();
+    if(mode<0.18){
+      const a=sampleInt(1,5), b=sampleInt(0,8);
+      setEqInts(a,b,a,b,0);
+      addLog(`New problem (∞ solutions): ${a}x + ${b} = ${a}x + ${b}`);
+    } else if(mode<0.36){
+      const a=sampleInt(1,5), b=sampleInt(0,8); let d=b+(sampleInt(0,1)?1:2);
+      setEqInts(a,b,a,d,0);
+      addLog(`New problem (no solution): ${a}x + ${b} = ${a}x + ${d}`);
+    } else {
+      const x = sampleInt(0,8);
+      let a=sampleInt(1,6), c=sampleInt(0,5); if(a===c) c=(c+1)%6;
+      const b=sampleInt(0,8), d=a*x - c*x + b;
+      setEqInts(a,b,c,d,x);
+      addLog(`New problem (Level 2): ${a}x + ${b} = ${c}x + ${d}`);
+    }
+  }
+  function genLevel3(){
+    const x = sampleInt(-5,8);
+    let a=sampleInt(1,6), c=sampleInt(0,5); if(a===c) c=(c+1)%6;
+    const b=sampleInt(-8,8), d=a*x - c*x + b;
+    setEqInts(a,b,c,d,x);
+    addLog(`New problem (Level 3, negatives): ${a}x ${b>=0?'+':''} ${b} = ${c}x ${d>=0?'+':''} ${d}`);
+  }
+  function genLevel4(){
+    const denA = sampleInt(1,5), denB = sampleInt(1,5), denC = sampleInt(1,5), denD = sampleInt(1,5);
+    const L = [denA,denB,denC,denD].reduce((p,v)=>lcm(p,v),1);
+    const x = sampleInt(-4,8);
+    let aI=sampleInt(1,5), cI=sampleInt(0,5); if(aI===cI) cI=(cI+1)%6;
+    const bI=sampleInt(-6,8), dI=aI*x - cI*x + bI;
+    const a=rat(aI,denA), b=rat(bI,denB), c=rat(cI,denC), d=rat(dI,denD);
+    setEqRats(a,b,c,d,x, [a.d,b.d,c.d,d.d].reduce((p,v)=>lcm(p,v),1));
+    addLog(`New problem (Level 4, fractions): ${ratStr(a)}x ${b.n>=0?'+':''} ${ratStr(b)} = ${ratStr(c)}x ${d.n>=0?'+':''} ${ratStr(d)}`);
+  }
+  function genProblem(){
+    if(level===1) genLevel1();
+    else if(level===2) genLevel2();
+    else if(level===3) genLevel3();
+    else genLevel4();
+  }
+  function updateLevelPill(){ $('#levelPill').textContent = `Level ${level} of ${LEVELS}`; }
+  function nextLevel(){ level = level%LEVELS + 1; genProblem(); }
+
+  /* ---------- Normalize & render ---------- */
+  function normalizeSide(side){
+    const S = state[side];
+    const t=Math.min(S.x,S.nx); S.x-=t; S.nx-=t;
+    const t2=Math.min(S.one,S.n1); S.one-=t2; S.n1-=t2;
+  }
+  function normalizeBoth(){ normalizeSide('left'); normalizeSide('right'); }
+
+  function renderTypeInto(side, type, count, neg=false){
+    const container = el.stacks[side][type==='x'?'x':'one'];
+    const groups = Math.ceil(count / MAX_PER_GROUP);
+    for(let g=0; g<groups; g++){
+      const group = document.createElement('div');
+      group.className = 'group';
+      const inThis = (g < groups-1) ? MAX_PER_GROUP : (count - (groups-1)*MAX_PER_GROUP);
+      for(let i=0;i<inThis;i++){
+        const cube = document.createElement('div');
+        cube.className = 'cube' + (neg?' neg':'');
+        cube.textContent = (type==='x') ? (neg?'−X':'X') : (neg?'−1':'1');
+        cube.dataset.type = neg ? (type==='x'?'nx':'n1') : (type==='x'?'x':'one');
+        cube.dataset.side = side;
+        cube.draggable = true;
+        cube.addEventListener('dragstart', onDragStart);
+        group.appendChild(cube);
+      }
+      container.appendChild(group);
+    }
+  }
+  function clearStackContainers(){
+    for(const side of ['left','right']){
+      for(const t of ['x','one']){
+        el.stacks[side][t].innerHTML = '';
+      }
+    }
+  }
+  function renderStacks(){
+    normalizeBoth();
+    clearStackContainers();
+
+    renderTypeInto('left','x', state.left.x,false);
+    renderTypeInto('left','x', state.left.nx,true);
+    renderTypeInto('left','one',state.left.one,false);
+    renderTypeInto('left','one',state.left.n1,true);
+
+    renderTypeInto('right','x', state.right.x,false);
+    renderTypeInto('right','x', state.right.nx,true);
+    renderTypeInto('right','one',state.right.one,false);
+    renderTypeInto('right','one',state.right.n1,true);
+
+    const L = leftNet(), R = rightNet();
+    $('#counts').innerHTML = `<span class="tag">Left: ${L.x}X + ${L.one}</span> <span class="tag">Right: ${R.x}X + ${R.one}</span>`;
+    $('#translation').textContent = `Left: ${transStr().split(' = ')[0]}  =  Right: ${transStr().split(' = ')[1]}`;
+
+    const guess = state.eq.sol ?? 1;
+    const weightLeft  = L.x * guess + L.one;
+    const weightRight = R.x * guess + R.one;
+    let tilt = Math.max(-6, Math.min(6, (weightRight - weightLeft)));
+    el.beam.style.transform = `translateX(-50%) rotate(${tilt*0.8}deg)`;
+  }
+
+  function solvedOrSpecial(){
+    const L = leftNet(), R = rightNet();
+    if(L.x===R.x){
+      if(L.one===R.one) return {type:'infinite'};
+      else return {type:'none'};
+    }
+    const leftIso  = (L.x===1 && L.one===0 && R.x===0);
+    const rightIso = (R.x===1 && R.one===0 && L.x===0);
+    if(leftIso)  return {type:'solved', value:R.one};
+    if(rightIso) return {type:'solved', value:L.one};
+    return {type:'ongoing'};
+  }
+  function updateUI(){
+    updateEquationText();
+    renderStacks();
+    const st = solvedOrSpecial();
+    if(st.type!==lastOutcome){
+      if(st.type==='solved') addLog(`Solved: x = ${st.value}`);
+      else if(st.type==='infinite') addLog('Identity reached: infinitely many solutions.');
+      else if(st.type==='none') addLog('Contradiction reached: no solution.');
+      lastOutcome = st.type;
+    }
+    if(st.type==='solved') el.board.innerHTML = `Solved: <b>x = ${st.value}</b> 🎉`;
+    else if(st.type==='infinite') el.board.innerHTML = `Identity: <b>0 = 0</b>. Infinitely many solutions.`;
+    else if(st.type==='none') el.board.innerHTML = `Contradiction: <b>0 ≠ 0</b>. No solution.`;
+    else el.board.innerHTML = state.mode==='solve' ? `Choose operations to isolate <b>x</b>.` : `Drag blocks to match the equation, then click <b>Check Model</b>.`;
+  }
+
+  /* ---------- DnD ---------- */
+  let dragData=null;
+  function onDragStart(e){
+    const t=e.target, type=t.dataset.type, originSide=t.dataset.side||null;
+    dragData={type, fromStack: !!originSide, originSide};
+    e.dataTransfer.setData('text/plain', `${type}${originSide?`|${originSide}`:''}`);
+    e.dataTransfer.effectAllowed = originSide ? 'move' : 'copy';
+  }
+  function inc(side,key,delta){ state[side][key]+=delta; if(state[side][key]<0) state[side][key]=0; }
+
+  function setupDnD(){
+    document.querySelectorAll('.prototype .cube').forEach(c=> c.addEventListener('dragstart', onDragStart));
+    ['pan-left','pan-right'].forEach(id=>{
+      const p=document.getElementById(id);
+      p.addEventListener('dragover', e=>{e.preventDefault(); p.classList.add('drop-hover');});
+      p.addEventListener('dragleave', ()=> p.classList.remove('drop-hover'));
+      p.addEventListener('drop', e=>{
+        e.preventDefault(); p.classList.remove('drop-hover'); if(!dragData) return;
+        const side=p.dataset.side, key=dragData.type;
+        pushUndo(); state.redoStack.length=0;
+        if(dragData.fromStack){
+          if(dragData.originSide===side) return;
+          if(state[dragData.originSide][key]===0) return;
+          inc(dragData.originSide,key,-1); inc(side,key,+1);
+          addLog(`Move 1 ${key.toUpperCase()} from ${dragData.originSide} to ${side}`);
+        }else{
+          inc(side,key,+1);
+          addLog(`Add 1 ${key.toUpperCase()} to both sides (from bin)`);
+          // when from bin, we conceptually add to both sides equally? (visual add is to one side; but log clarifies)
+        }
+        updateUI();
+      });
+    });
+    const trash=el.trash;
+    trash.addEventListener('dragover', e=>{e.preventDefault(); trash.classList.add('drop-hover')});
+    trash.addEventListener('dragleave', ()=> trash.classList.remove('drop-hover'));
+    trash.addEventListener('drop', e=>{
+      e.preventDefault(); trash.classList.remove('drop-hover'); if(!dragData) return;
+      const key=dragData.type;
+      if(dragData.fromStack && dragData.originSide && state[dragData.originSide][key]>0){
+        pushUndo(); state.redoStack.length=0;
+        inc(dragData.originSide,key,-1);
+        addLog(`Delete 1 ${key.toUpperCase()} from ${dragData.originSide}`);
+        updateUI();
+      }
+    });
+  }
+
+  /* ---------- Undo/Redo ---------- */
+  const snapshot=()=> JSON.parse(JSON.stringify({mode:state.mode,left:state.left,right:state.right}));
+  function pushUndo(){ state.undoStack.push(snapshot()); if(state.undoStack.length>300) state.undoStack.shift(); }
+  function doUndo(){ if(!state.undoStack.length) return;
+    state.redoStack.push(snapshot()); const prev=state.undoStack.pop();
+    state.mode=prev.mode; state.left=prev.left; state.right=prev.right; addLog('Undo'); updateUI();
+  }
+  function doRedo(){ if(!state.redoStack.length) return;
+    state.undoStack.push(snapshot()); const next=state.redoStack.pop();
+    state.mode=next.mode; state.left=next.left; state.right=next.right; addLog('Redo'); updateUI();
+  }
+
+  /* ---------- Modeling ---------- */
+  function modelTargets(){
+    const L=state.eq.lcm||1; const {a,b,c,d}=state.eq;
+    const A=a.n*(L/a.d), B=b.n*(L/b.d), C=c.n*(L/c.d), D=d.n*(L/d.d);
+    const toCounts=coef=>({pos:Math.max(0,coef), neg:Math.max(0,-coef)});
+    return {left:{x:toCounts(A),one:toCounts(B)}, right:{x:toCounts(C),one:toCounts(D)}, scale:L};
+  }
+  function resetWorkspace(){
+    state.mode='model';
+    state.left={x:0,nx:0,one:0,n1:0};
+    state.right={x:0,nx:0,one:0,n1:0};
+    state.undoStack.length=0; state.redoStack.length=0;
+    el.ctrModel.classList.remove('hidden'); el.ctrSolve.classList.add('hidden');
+    lastOutcome='ongoing'; updateUI();
+  }
+  function checkModel(){
+    const T=modelTargets();
+    const ok = state.left.x===T.left.x.pos && state.left.nx===T.left.x.neg &&
+               state.left.one===T.left.one.pos && state.left.n1===T.left.one.neg &&
+               state.right.x===T.right.x.pos && state.right.nx===T.right.x.neg &&
+               state.right.one===T.right.one.pos && state.right.n1===T.right.one.neg;
+    if(ok){
+      addLog('Model correct → Solve mode'); el.ctrModel.classList.add('hidden'); el.ctrSolve.classList.remove('hidden'); state.mode='solve'; toast('Model correct!','good');
+    }else{
+      const L=leftNet(), R=rightNet();
+      toast('Not quite—compare counts.','warn');
+      addLog(`Model check failed. Target L:${T.left.x.pos-T.left.x.neg}x + ${T.left.one.pos-T.left.one.neg}, R:${T.right.x.pos-T.right.x.neg}x + ${T.right.one.pos-T.right.one.neg}`);
+    }
+  }
+
+  /* ---------- Solve operations ---------- */
+  function doAdd(pos,neg){
+    pushUndo(); state.redoStack.length=0;
+    if(pos){ state.left.x+=pos.x; state.right.x+=pos.x; state.left.one+=pos.one; state.right.one+=pos.one; addLog(`Add ${pos.x}X and ${pos.one} ones to both sides`); }
+    if(neg){ state.left.nx+=neg.x; state.right.nx+=neg.x; state.left.n1+=neg.one; state.right.n1+=neg.one; addLog(`Add ${neg.x}(-X) and ${neg.one}(-1) to both sides`); }
+    updateUI();
+  }
+  function doSubtract(sub){
+    if(state.left.x<sub.x || state.right.x<sub.x){ toast('Not enough X to subtract.','warn'); return; }
+    if(state.left.one<sub.one || state.right.one<sub.one){ toast('Not enough 1s to subtract.','warn'); return; }
+    pushUndo(); state.redoStack.length=0;
+    state.left.x-=sub.x; state.right.x-=sub.x;
+    state.left.one-=sub.one; state.right.one-=sub.one;
+    addLog(`Subtract ${sub.x}X and ${sub.one} ones from both sides`);
+    updateUI();
+  }
+  function doMultiply(k){
+    if(k<2){ toast('Use an integer ≥ 2.','warn'); return; }
+    pushUndo(); state.redoStack.length=0;
+    for(const side of ['left','right']) for(const key of ['x','nx','one','n1']) state[side][key]*=k;
+    addLog(`Multiply both sides by ${k}`);
+    updateUI();
+  }
+  function doDivide(k){
+    if(k<2){ toast('Use an integer ≥ 2.','warn'); return; }
+    for(const side of ['left','right']) for(const key of ['x','nx','one','n1']) if(state[side][key]%k!==0){ toast('Each term must be divisible.','warn'); return; }
+    pushUndo(); state.redoStack.length=0;
+    for(const side of ['left','right']) for(const key of ['x','nx','one','n1']) state[side][key]=Math.floor(state[side][key]/k);
+    addLog(`Divide both sides by ${k}`);
+    updateUI();
+  }
+
+  /* ---------- Log & Share ---------- */
+  function toast(msg, kind=''){ el.toast.textContent=msg; el.toast.className=`toast ${kind}`; setTimeout(()=>el.toast.classList.add('hidden'),1400); }
+
+  function copyToClipboard(text){
+    if(navigator.clipboard){ navigator.clipboard.writeText(text).then(()=>toast('Copied!')); }
+    else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied!'); }
+  }
+
+  function exportLog(){
+    const blob = new Blob([state.log.join('\n')], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='action-log.txt'; a.click(); URL.revokeObjectURL(url);
+  }
+
+  function getSharePayload(){
+    return {
+      level, mode: state.mode,
+      eq: state.eq,
+      left: state.left, right: state.right,
+      log: state.log
+    };
+  }
+  function applyPayload(p){
+    if(!p) return;
+    level = p.level ?? 1; state.mode = p.mode ?? 'model';
+    state.eq = p.eq; state.left=p.left; state.right=p.right;
+    state.log = Array.isArray(p.log)? p.log.slice(): [];
+    el.logList.innerHTML=''; state.log.forEach(line=>{ const r=document.createElement('div'); r.className='row'; r.textContent=line; el.logList.appendChild(r); });
+    updateLevelPill(); lastOutcome='ongoing'; updateUI(); toast('Loaded shared state','good');
+  }
+  const enc = obj => btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  const dec = str => JSON.parse(decodeURIComponent(escape(atob(str))));
+
+  function copyShareLink(){
+    const base = location.href.split('#')[0].split('?')[0];
+    const code = enc(getSharePayload());
+    const link = `${base}?s=${code}`;
+    copyToClipboard(link);
+  }
+  function copyEmbedCode(){
+    const base = location.href.split('#')[0].split('?')[0];
+    const code = enc(getSharePayload());
+    const url  = `${base}?s=${code}`;
+    const html = `<iframe src="${url}" width="900" height="700" style="border:0;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08)"></iframe>`;
+    el.embedBox.value = html;
+    copyToClipboard(html);
+  }
+  function downloadSave(){
+    const blob = new Blob([JSON.stringify(getSharePayload(),null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='balance-save.json'; a.click(); URL.revokeObjectURL(url);
+  }
+  function uploadSave(file){
+    const reader = new FileReader();
+    reader.onload = e=>{ try{ const payload = JSON.parse(e.target.result); applyPayload(payload); }catch{ toast('Invalid file','warn'); } };
+    reader.readAsText(file);
+  }
+
+  /* ---------- Wire up ---------- */
+  // Drag & drop
+  setupDnD();
+
+  // Model buttons
+  el.check.addEventListener('click', checkModel);
+  el.clear.addEventListener('click', ()=>{ state.left={x:0,nx:0,one:0,n1:0}; state.right={x:0,nx:0,one:0,n1:0}; addLog('Clear workspace'); updateUI(); });
+  el.create.addEventListener('click', createProblemPrompt);
+  el.new1.addEventListener('click', ()=>{ nextLevel(); });
+
+  // Solve buttons
+  el.new2.addEventListener('click', ()=>{ nextLevel(); });
+  el.back.addEventListener('click', ()=>{ state.mode='model'; el.ctrModel.classList.remove('hidden'); el.ctrSolve.classList.add('hidden'); addLog('Back to model'); updateUI(); });
+  el.btnAddOk.addEventListener('click', ()=>{ const x=+el.addX.value||0, one=+el.add1.value||0; if(x===0&&one===0) return toast('Enter values'); el.addX.value=0; el.add1.value=0; doAdd({x,one},null); });
+  el.btnAddNegOk.addEventListener('click', ()=>{ const x=+el.addNX.value||0, one=+el.addN1.value||0; if(x===0&&one===0) return toast('Enter values'); el.addNX.value=0; el.addN1.value=0; doAdd(null,{x,one}); });
+  el.btnSubOk.addEventListener('click', ()=>{ const x=+el.subX.value||0, one=+el.sub1.value||0; if(x===0&&one===0) return toast('Enter values'); el.subX.value=0; el.sub1.value=0; doSubtract({x,one}); });
+  el.btnMulOk.addEventListener('click', ()=> doMultiply(parseInt(el.mulK.value||'2',10)));
+  el.btnDivOk.addEventListener('click', ()=> doDivide(parseInt(el.divK.value||'2',10)));
+
+  // Undo/redo
+  el.undo.addEventListener('click', doUndo);
+  el.redo.addEventListener('click', doRedo);
+  window.addEventListener('keydown', (e)=>{
+    const key=e.key.toLowerCase();
+    if((e.ctrlKey||e.metaKey)&&key==='z'&&!e.shiftKey){ e.preventDefault(); doUndo(); }
+    else if((e.ctrlKey||e.metaKey)&&(key==='y'||(key==='z'&&e.shiftKey))){ e.preventDefault(); doRedo(); }
+  });
+
+  // Log/share buttons
+  el.btnCopyLog.addEventListener('click', ()=> copyToClipboard(state.log.join('\n')));
+  el.btnDownloadLog.addEventListener('click', exportLog);
+  el.btnClearLog.addEventListener('click', ()=>{ state.log.length=0; el.logList.innerHTML=''; toast('Log cleared'); });
+  el.btnShareLink.addEventListener('click', copyShareLink);
+  el.btnSaveJSON.addEventListener('click', downloadSave);
+  el.btnLoadJSON.addEventListener('click', ()=> el.fileLoad.click());
+  el.fileLoad.addEventListener('change', e=>{ const f=e.target.files[0]; if(f) uploadSave(f); e.target.value=''; });
+  el.btnEmbed.addEventListener('click', copyEmbedCode);
+
+  // Create problem prompt (supports fractions)
+  function createProblemPrompt(){
+    const val = prompt("Create a problem in the form a*x + b = c*x + d\nUse integers or fractions like 3/2. Enter a,b,c,d:", "2,1,0,7");
+    if(!val) return;
+    const parts = val.split(',').map(s=>s.trim());
+    if(parts.length!==4){ alert('Please enter four values, e.g., 3,2,1,8 or 1/2,3,0,7'); return; }
+    const parseR=(s)=> s.includes('/')? (()=>{const [p,q]=s.split('/').map(Number); if(!isFinite(p)||!isFinite(q)||q===0) throw 0; return rat(p,q);})() : rat(Number(s),1);
+    try{
+      const a=parseR(parts[0]), b=parseR(parts[1]), c=parseR(parts[2]), d=parseR(parts[3]);
+      const L=[a.d,b.d,c.d,d.d].reduce((p,v)=>lcm(p,v),1);
+      setEqRats(a,b,c,d,0,L); addLog(`Custom problem: ${ratStr(a)}x ${b.n>=0?'+':''} ${ratStr(b)} = ${ratStr(c)}x ${d.n>=0?'+':''} ${ratStr(d)}`);
+    }catch{ alert('Invalid number. Use integers or fractions like 5/3.'); }
+  }
+
+  // Load from URL (?s=...)
+  (function loadFromURL(){
+    const params = new URLSearchParams(location.search);
+    const s=params.get('s');
+    if(s){ try{ const payload=dec(s); applyPayload(payload); }catch{ /* ignore */ } }
+    else { genProblem(); }
+  })();
+
+})();
+</script>
+</body>
+</html>
