@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Miscellaneous Apps</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#f0f4f8; margin:0; padding:2rem; text-align:center; }
+    h1 { color:#2c3e50; margin-bottom:2rem; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:1.5rem; max-width:1100px; margin:0 auto; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,.1); padding:1.2rem; transition:transform .2s, box-shadow .2s; }
+    .card:hover { transform:translateY(-5px); box-shadow:0 6px 12px rgba(0,0,0,.15); }
+    .card a { text-decoration:none; font-size:1rem; color:#2980b9; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <h1>Miscellaneous Apps</h1>
+
+  <div class="grid" id="appGrid"></div>
+
+  <script>
+    const apps = [
+      { file: "boss_battle_multistep_equations.html", title: "Boss Battle - Multistep Equations" },
+      { file: "boss_battle_order_of_operations.html", title: "Boss Battle - Order of Operations" },
+      { file: "Equation_manipulative.html", title: "Equation Manipulative" },
+      { file: "Equations_Jeopardy.html", title: "Equations Jeopardy" },
+      { file: "escape_room_rules_of_exponents.html", title: "Escape Room - Rules of Exponents" },
+      { file: "escape_room_simplifying_square_roots.html", title: "Escape Room - Simplifying Square Roots" },
+      { file: "escape_room_square_roots_operations.html", title: "Escape Room - Square Roots Operations" },
+      { file: "escape_room_translate_equations.html", title: "Escape Room - Translate Equations" },
+      { file: "Exponent_Escape_Room.html", title: "Exponent Escape Room" },
+      { file: "Exponents_Jeopardy-harder.html", title: "Exponents Jeopardy (Harder)" },
+      { file: "Exponents_Jeopardy.html", title: "Exponents Jeopardy" },
+      { file: "exponents_kahoot_style_v3.html", title: "Exponents Kahoot Style v3" },
+      { file: "Formulating_equations_ER.html", title: "Formulating Equations Escape Room" },
+      { file: "inequalities_ER1.html", title: "Inequalities ER 1" },
+      { file: "inequalities_ER2.html", title: "Inequalities ER 2" },
+      { file: "Inequalities_ER3.html", title: "Inequalities ER 3" },
+      { file: "Jeopady_Functions_Part_1.html", title: "Jeopardy - Functions Part 1" },
+      { file: "Jeopardy_Exponential.html", title: "Jeopardy - Exponentials" },
+      { file: "Jeopardy_Function_Part-2.html", title: "Jeopardy - Functions Part 2" },
+      { file: "Jeopardy_Linear_Functions_Part-1.html", title: "Jeopardy - Linear Functions Part 1" },
+      { file: "Jeopardy_Linear_Functions_Part-2.html", title: "Jeopardy - Linear Functions Part 2" },
+      { file: "Jeopardy_Polynomial-v2.html", title: "Jeopardy - Polynomial v2" },
+      { file: "Jeopardy_Polynomials.html", title: "Jeopardy - Polynomials" },
+      { file: "Jeopardy_Quadratics.html", title: "Jeopardy - Quadratics" },
+      { file: "Jeopardy_Solving_Inequalities.html", title: "Jeopardy - Solving Inequalities" },
+      { file: "Jeopardy_Systems.html", title: "Jeopardy - Systems" },
+      { file: "literal_equations_ER.html", title: "Literal Equations Escape Room" },
+      { file: "more_square_roots.html", title: "More Square Roots" },
+      { file: "Radicals_Jeopardy.html", title: "Radicals Jeopardy" },
+      { file: "square_root-variables.html", title: "Square Root Variables" },
+      { file: "square_root-variables2.html", title: "Square Root Variables 2" },
+      { file: "square_roots_kahoot.html", title: "Square Roots Kahoot" },
+      { file: "square_roots_operations_kahoot.html", title: "Square Roots Operations Kahoot" },
+      { file: "target_score_exponents_5min.html", title: "Target Score - Exponents (5 min)" },
+      { file: "target_score_exponents.html", title: "Target Score - Exponents" },
+      { file: "target_score_simplifying_square_roots.html", title: "Target Score - Simplifying Square Roots" },
+      { file: "target_score_square_roots_operations.html", title: "Target Score - Square Roots Operations" }
+    ];
+
+    const grid = document.getElementById("appGrid");
+    apps.forEach(app => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `<a href="${app.file}" target="_blank">${app.title}</a>`;
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
